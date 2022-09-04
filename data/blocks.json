@@ -1,0 +1,10 @@
+{
+  "air": {
+    "name": "Air",
+    "tag": ["image_not_displayed", "mob_transparent", "light_transparent"]
+  },
+  "test_block": {
+    "name": "Test Block",
+    "tag": []
+  }
+}
