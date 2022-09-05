@@ -56,66 +56,81 @@ class Block:
 
 
 class World:
-    default_settings = {"seed": 0, "world_length": 64, "world_height": 48}
+    default_settings = {"seed": 0, "world_length": 4096, "world_height": 256}
     settings = None
     map = None
-    def valid_coordinate(self, _x, _y):
+    def valid_coordinate(self, _x, _y) -> bool:
         return _x >= 0 and _x < self.settings["world_length"] and _y >= 0 and _y < self.settings["world_height"]
-    def noise(self, _seed: int) -> list:
-        random.seed(_seed)
-        curve = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
-        height_value = self.settings["world_height"] / 2
-        first_step = self.settings["world_length"] / 4
-        step_divider = 1
-        step_length = first_step / step_divider
-        while step_length >= 1:
+    def noise(self) -> list:
+        random.seed(self.settings["seed"])
+        terrain = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
+        offset = [0 for i in range(self.settings["world_length"])]
+        step_length = 1
+        step_count = 0
+        offset_1 = random.uniform(step_length * -0.25, step_length * 0.25)
+        offset_2 = random.uniform(step_length * -0.25, step_length * 0.25)
+        while step_length <= 2 ** 6:
             for x in range(self.settings["world_length"]):
+                step_count += 1
                 if x % step_length == 0:
-                    height_value = random.uniform(self.settings["world_height"] * -0.0625 / step_divider, self.settings["world_height"] * 0.0625 / step_divider)
-                curve[x] += height_value
-            step_divider *= 2
-            step_length = first_step / step_divider
+                    offset_1 = offset_2
+                    offset_2 = random.uniform(step_length * -0.25, step_length * 0.25)
+                    step_count = 0
+                offset[x] = offset_1 + (step_count * ((offset_2 - offset_1) / step_length))
+            for x in range(self.settings["world_length"]):
+                terrain[x] += offset[x]
+            step_length *= 2
         for x in range(self.settings["world_length"]):
-            curve[x] = int(curve[x])
-        return curve
+            terrain[x] = int(terrain[x])
+        return terrain
     def __init__(self, _settings: dict = default_settings) -> None:
         self.settings = _settings
-        self.map = [[Block("air") for j in range(self.settings["world_height"])] for i in range(self.settings["world_length"])]
-        terrain = self.noise(self.settings["seed"])
+        self.map = [[Block("air") for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
+        terrain = self.noise()
         for x in range(self.settings["world_length"]):
-            for y in range(terrain[x]):
-                self.map[x][y] = Block("test_block")
+            for y in range(min(terrain[x], self.settings["world_height"])):
+                self.map[x][y] = Block("stone")
+                if terrain[x] - y <= 4:
+                    self.map[x][y] = Block("soil")
+                if terrain[x] - y == 1:
+                    self.map[x][y] = Block("grassy_soil")
     def __str__(self) -> str:
         return "World"
-    def display(self, _x = 0, _y = 0) -> None:
+    def display(self, _x, _y) -> None:
         float_x = math.modf(_x)[0]
         float_y = math.modf(_y)[0]
         int_x = int(_x)
         int_y = int(_y)
-        for y in range(int_x - 64, int_x + 65):
-            for x in range(int_y - 64, int_y + 65):
-                if not self.valid_coordinate(x, y):
+        for offset_x in range(-64, 65):
+            for offset_y in range(-64, 65):
+                block_x = offset_x + int_x
+                block_y = offset_y + int_y
+                if not self.valid_coordinate(block_x, block_y):
                     continue
-                current_block = self.map[x][y]
-                current_image = assets.block_images[current_block.id]
-                current_image_scaled = pygame.transform.scale(current_image, (16 * settings.scale, 16 * settings.scale))
-                current_image_position = ((int((x + float_x) * 16) * settings.scale), (int((y + float_y) * 16) * settings.scale))
-                window.blit(current_image_scaled, current_image_position)
+                current_block = self.map[block_x][block_y]
+                current_image_unscaled = assets.block_images[current_block.id]
+                current_image = pygame.transform.scale(current_image_unscaled, (16 * settings.scale, 16 * settings.scale))
+                current_image_position = ((int((offset_x + float_x) * 16) * settings.scale) + 512, (int((offset_y - float_y) * -16) * settings.scale) + 384)
+                window.blit(current_image, current_image_position)
+world = World()
 
 
-def display():
+def display(_x, _y):
     window.fill((0, 0, 0))
-    world.display(32, 24.25)
+    world.display(_x, _y)
     pygame.display.flip()
 
 
-world = World()
+test_x = 1024
+test_y = 128
 return_value = -1
 while return_value == -1:
     for i in pygame.event.get():
         if i.type == pygame.QUIT:
             return_value = 0
-    display()
+    print(test_x, test_y)
+    display(test_x, test_y)
+    test_x += 4
     pygame.time.delay(100)
 pygame.quit()
 sys.exit(return_value)
