@@ -1,0 +1,107 @@
+{
+  "air": {
+    "name": "Air",
+    "data": {
+      "mining_tool": "none",
+      "mining_level": "0",
+      "tile_drop": []
+    },
+    "state": {},
+    "tag": [
+      "not_mineable",
+      "can_be_replaced",
+      "image_transparent",
+      "mob_transparent",
+      "light_transparent"
+    ]
+  },
+  "test_tile": {
+    "name": "Test Tile",
+    "data": {
+      "mining_tool": "none",
+      "mining_level": "0",
+      "tile_drop": [
+        {
+          "item": "test_item",
+          "count": 1
+        }
+      ]
+    },
+    "state": {"key": "value"},
+    "tag": []
+  },
+  "stone": {
+    "name": "Stone",
+    "data": {
+      "mining_tool": "pickaxe",
+      "mining_level": "1",
+      "tile_drop": [
+        {
+          "item": "rock",
+          "count": 1
+        }
+      ]
+    },
+    "state": {},
+    "tag": ["stone"]
+  },
+  "soil": {
+    "name": "Soil",
+    "data": {
+      "mining_tool": "shovel",
+      "mining_level": "0",
+      "tile_drop": [
+        {
+          "item": "soil",
+          "count": 1
+        }
+      ]
+    },
+    "state": {},
+    "tag": [
+      "soil",
+      "falling_tile"
+    ]
+  },
+  "grassy_soil": {
+    "name": "Grassy Soil",
+    "data": {
+      "mining_tool": "shovel",
+      "mining_level": "0",
+      "tile_drop": [
+        {
+          "item": "soil",
+          "count": 1
+        },
+        {
+          "item": "grass",
+          "count": 1
+        }
+      ]
+    },
+    "state": {},
+    "tag": ["soil"]
+  },
+  "coal_ore": {
+    "name": "Coal Ore",
+    "data": {
+      "mining_tool": "pickaxe",
+      "mining_level": "1",
+      "tile_drop": [
+        {
+          "item": "rock",
+          "count": 1
+        },
+        {
+          "item": "coal",
+          "count": 1
+        }
+      ]
+    },
+    "state": {},
+    "tag": [
+      "stone",
+      "ore"
+    ]
+  }
+}
