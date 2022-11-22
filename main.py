@@ -13,7 +13,7 @@ class Settings:
     window_length = 1024
     window_height = 768
     scale = 1
-    gravity = 0.0625
+    gravity = -0.0625
     def __init__(self) -> None:
         pass
 settings = Settings()
@@ -219,9 +219,9 @@ class World:
         _mob.state["x"] += list_x[-1]
         _mob.state["y"] += list_y[-1]
         return _mob
-    def tick(self, _states) -> None:
+    def tick(self, _states) -> int:
         self.player.state["mx"] = 0.0
-        self.player.state["my"] -= settings.gravity
+        self.player.state["my"] += settings.gravity
         if key_is_down(_states, pygame.K_SPACE):
             if self.mob_on_ground(self.player):
                 self.player.state["my"] += 0.75
@@ -229,7 +229,14 @@ class World:
             self.player.state["mx"] = -data.mob_data["player"]["data"]["speed"]
         if key_is_down(_states, pygame.K_d):
             self.player.state["mx"] = data.mob_data["player"]["data"]["speed"]
+        if key_is_down(_states, pygame.K_BACKQUOTE):
+            settings.scale = 2
+        else:
+            settings.scale = 1
+        if key_is_down(_states, pygame.K_DELETE):
+            return 0
         self.player = self.move(self.player)
+        return -1
     def display(self, _x, _y) -> None:
         float_x = math.modf(_x)[0]
         float_y = math.modf(_y)[0]
@@ -263,7 +270,7 @@ key_states = {}
 while return_value == -1:
     events = pygame.event.get()
     key_states = get_key_states(events, key_states)
-    world.tick(key_states)
+    return_value = world.tick(key_states)
     display(world.player.state["x"], world.player.state["y"])
     pygame.time.delay(10)
 pygame.quit()
