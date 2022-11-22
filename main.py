@@ -10,6 +10,8 @@ def hexadecimal(_number: int) -> str:
 
 
 class Settings:
+    window_length = 1024
+    window_height = 768
     scale = 1
     gravity = 0.0625
     def __init__(self) -> None:
@@ -18,7 +20,7 @@ settings = Settings()
 
 
 pygame.init()
-window = pygame.display.set_mode((1024, 768))
+window = pygame.display.set_mode((settings.window_length, settings.window_height))
 pygame.display.set_caption("PyBox")
 window.fill((0, 255, 0))
 
@@ -148,8 +150,8 @@ class World:
                 if terrain[x] - y == 1:
                     self.map[x][y] = Tile("grassy_soil")
         self.player = Mob("player")
-        self.player.state["x"] = 999.0
-        self.player.state["y"] = float(terrain[999] + 1)
+        self.player.state["x"] = float(int(self.settings["world_length"] / 2))
+        self.player.state["y"] = float(terrain[int(self.settings["world_length"] / 2)])
         self.player.state["mx"] = 0.0
         self.player.state["my"] = 0.0
     def mob_on_ground(self, _mob) -> bool:
@@ -177,8 +179,8 @@ class World:
                                 [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
             for j in range(len(block_coordinate)):
                 if not self.valid_coordinate(block_coordinate[j][0], block_coordinate[j][1]):
-                    _mob.state["x"] = 0.0
-                    _mob.state["y"] = 0.0
+                    _mob.state["x"] = float(int(self.settings["world_length"] / 2))
+                    _mob.state["y"] = 250.0
                     _mob.state["mx"] = 0.0
                     _mob.state["my"] = 0.0
                     return _mob
@@ -222,7 +224,7 @@ class World:
         self.player.state["my"] -= settings.gravity
         if key_is_down(_states, pygame.K_SPACE):
             if self.mob_on_ground(self.player):
-                self.player.state["my"] += 0.5
+                self.player.state["my"] += 0.75
         if key_is_down(_states, pygame.K_a):
             self.player.state["mx"] = -data.mob_data["player"]["data"]["speed"]
         if key_is_down(_states, pygame.K_d):
@@ -242,8 +244,11 @@ class World:
                 current_tile = self.map[tile_x][tile_y]
                 current_image_unscaled = assets.tile_images[current_tile.id]
                 current_image = pygame.transform.scale(current_image_unscaled, (16 * settings.scale, 16 * settings.scale))
-                current_image_position = ((int((offset_x - float_x) * 16) * settings.scale) + 512, (int((offset_y - float_y) * -16) * settings.scale) + 384)
+                current_image_position = ((int((offset_x - float_x) * 16 - 8) * settings.scale) + settings.window_length / 2, (int((offset_y - float_y) * -16 - 8) * settings.scale) + settings.window_height / 2)
                 window.blit(current_image, current_image_position)
+        player_image_unscaled = assets.mob_images["player"]
+        player_image = pygame.transform.scale(player_image_unscaled, (16 * settings.scale, 16 * settings.scale))
+        window.blit(player_image, ((settings.window_length - 16 * settings.scale) / 2, (settings.window_height - 16 * settings.scale) / 2))
 world = World()
 
 
@@ -259,7 +264,6 @@ while return_value == -1:
     events = pygame.event.get()
     key_states = get_key_states(events, key_states)
     world.tick(key_states)
-    print(world.player.state["x"], world.player.state["y"], world.player.state["mx"], world.player.state["my"])
     display(world.player.state["x"], world.player.state["y"])
     pygame.time.delay(10)
 pygame.quit()
