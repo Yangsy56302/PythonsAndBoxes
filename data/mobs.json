@@ -1,15 +1,11 @@
 {
   "player": {
     "name": "Player",
-    "data": {},
-    "state": {
-      "x": 0.0,
-      "y": 0.0,
-      "mx": 0.0,
-      "my": 0.0,
+    "data": {
       "max_health": 256,
-      "health": 256
+      "speed": 0.25
     },
+    "state": {},
     "tag": []
   }
 }
