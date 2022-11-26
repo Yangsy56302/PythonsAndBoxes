@@ -22,6 +22,7 @@ settings = Settings()
 pygame.init()
 window = pygame.display.set_mode((settings.window_length, settings.window_height))
 pygame.display.set_caption("PyBox")
+pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
 window.fill((0, 255, 0))
 
 
