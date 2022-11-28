@@ -2,28 +2,23 @@ import pygame
 import math
 import random
 import json
+import time
 import sys
 
 
-def hexadecimal(_number: int) -> str:
-    return hex(_number).upper()[2:]
-
-
-class Settings:
-    window_length = 1024
-    window_height = 768
-    scale = 1
-    gravity = -0.0625
-    def __init__(self) -> None:
-        pass
-settings = Settings()
+def import_settings() -> dict:
+    file = open(".\\data\\settings.json")
+    settings = json.load(file)
+    file.close()
+    return settings
+settings = import_settings()
 
 
 pygame.init()
-window = pygame.display.set_mode((settings.window_length, settings.window_height))
+window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
 pygame.display.set_caption("PyBox")
 pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
-window.fill((0, 255, 0))
+window.fill((0, 0, 0))
 
 
 def get_key_states(_events, _states: dict = {}) -> dict:
@@ -65,6 +60,7 @@ class Data:
     def load(self) -> None:
         file = open(".\\data\\tiles.json")
         self.tile_data = json.load(file)
+        file.close()
         file = open(".\\data\\mobs.json")
         self.mob_data = json.load(file)
         file.close()
@@ -111,7 +107,7 @@ class Mob:
 
 
 class World:
-    default_settings = {"seed": 0, "world_length": 4096, "world_height": 256}
+    default_settings = settings["default_world_settings"]
     settings = None
     map = None
     player = None
@@ -156,61 +152,65 @@ class World:
         self.player.state["mx"] = 0.0
         self.player.state["my"] = 0.0
     def mob_on_ground(self, _mob) -> bool:
-        block_coordinate = [[int(_mob.state["x"] + 0.03125), int(_mob.state["y"] - 0.03125)],
+        tile_coordinate = [[int(_mob.state["x"] + 0.03125), int(_mob.state["y"] - 0.03125)],
                             [int(_mob.state["x"] + 0.96875), int(_mob.state["y"] - 0.03125)]]
-        for coordinate in block_coordinate:
+        for coordinate in tile_coordinate:
             if self.valid_coordinate(coordinate[0], coordinate[1]):
                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                     return True
         return False
     def move(self, _mob) -> Mob:
-        if _mob.state["mx"] == 0 and _mob.state["my"] == 0:
+        if _mob.state["mx"] == 0 and _mob.state["my"] == 0: # move?
             return _mob
+        # get player's coordinate
         max_move = int(max(abs(_mob.state["mx"]), abs(_mob.state["my"])) * 16)
         list_x = [0 for x in range(max_move + 1)]
-        if _mob.state["mx"] != 0:
+        if _mob.state["mx"] != 0: # avoid mx / 0
             list_x = [int(x * _mob.state["mx"] * 16 / max_move) / 16 for x in range(max_move + 1)]
         list_y = [0 for y in range(max_move + 1)]
-        if _mob.state["my"] != 0:
+        if _mob.state["my"] != 0: # avoid my / 0
             list_y = [int(y * _mob.state["my"] * 16 / max_move) / 16 for y in range(max_move + 1)]
+        # test the touch between player and tile
         for i in range(max_move + 1):
-            block_coordinate = [[int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.03125)],
+            # get tile's coordinate
+            tile_coordinate = [[int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.03125)],
                                 [int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.96875)],
                                 [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.03125)],
                                 [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
-            for j in range(len(block_coordinate)):
-                if not self.valid_coordinate(block_coordinate[j][0], block_coordinate[j][1]):
+            for j in range(len(tile_coordinate)):
+                if not self.valid_coordinate(tile_coordinate[j][0], tile_coordinate[j][1]):
                     _mob.state["x"] = float(int(self.settings["world_length"] / 2))
                     _mob.state["y"] = 250.0
                     _mob.state["mx"] = 0.0
                     _mob.state["my"] = 0.0
                     return _mob
-                if "mob_transparent" not in data.tile_data[self.map[block_coordinate[j][0]][block_coordinate[j][1]].id]["tag"]:
+                # collapse
+                if "mob_transparent" not in data.tile_data[self.map[tile_coordinate[j][0]][tile_coordinate[j][1]].id]["tag"]:
                     if _mob.state["mx"] > 0:
-                        block_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
+                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
                                             [int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
-                        for coordinate in block_coordinate:
+                        for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["mx"] = 0.0
                     else:
-                        block_coordinate = [[int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
+                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
                                             [int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
-                        for coordinate in block_coordinate:
+                        for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["mx"] = 0.0
                     if _mob.state["my"] > 0:
-                        block_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] + 1.03125)],
+                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] + 1.03125)],
                                             [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] + 1.03125)]]
-                        for coordinate in block_coordinate:
+                        for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["my"] = 0.0
                     else:
-                        block_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] - 0.03125)],
+                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] - 0.03125)],
                                             [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] - 0.03125)]]
-                        for coordinate in block_coordinate:
+                        for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["my"] = 0.0
@@ -222,7 +222,7 @@ class World:
         return _mob
     def tick(self, _states) -> int:
         self.player.state["mx"] = 0.0
-        self.player.state["my"] += settings.gravity
+        self.player.state["my"] += self.settings["gravity"]
         if key_is_down(_states, pygame.K_SPACE):
             if self.mob_on_ground(self.player):
                 self.player.state["my"] += 0.75
@@ -231,9 +231,9 @@ class World:
         if key_is_down(_states, pygame.K_d):
             self.player.state["mx"] = data.mob_data["player"]["data"]["speed"]
         if key_is_down(_states, pygame.K_BACKQUOTE):
-            settings.scale = 2
+            settings["scale"] = 2
         else:
-            settings.scale = 1
+            settings["scale"] = 1
         if key_is_down(_states, pygame.K_DELETE):
             return 0
         self.player = self.move(self.player)
@@ -251,12 +251,13 @@ class World:
                     continue
                 current_tile = self.map[tile_x][tile_y]
                 current_image_unscaled = assets.tile_images[current_tile.id]
-                current_image = pygame.transform.scale(current_image_unscaled, (16 * settings.scale, 16 * settings.scale))
-                current_image_position = ((int((offset_x - float_x) * 16 - 8) * settings.scale) + settings.window_length / 2, (int((offset_y - float_y) * -16 - 8) * settings.scale) + settings.window_height / 2)
+                current_image = pygame.transform.scale(current_image_unscaled, (16 * settings["scale"], 16 * settings["scale"]))
+                current_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["scale"]) + settings["window_length"] / 2,
+                                          (int((offset_y - float_y) * -16 - 8) * settings["scale"]) + settings["window_height"] / 2)
                 window.blit(current_image, current_image_position)
         player_image_unscaled = assets.mob_images["player"]
-        player_image = pygame.transform.scale(player_image_unscaled, (16 * settings.scale, 16 * settings.scale))
-        window.blit(player_image, ((settings.window_length - 16 * settings.scale) / 2, (settings.window_height - 16 * settings.scale) / 2))
+        player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["scale"], 16 * settings["scale"]))
+        window.blit(player_image, ((settings["window_length"] - 16 * settings["scale"]) / 2, (settings["window_height"] - 16 * settings["scale"]) / 2))
 world = World()
 
 
@@ -269,10 +270,13 @@ def display(_x, _y):
 return_value = -1
 key_states = {}
 while return_value == -1:
+    start_tick_time = time.time()
     events = pygame.event.get()
     key_states = get_key_states(events, key_states)
     return_value = world.tick(key_states)
     display(world.player.state["x"], world.player.state["y"])
-    pygame.time.delay(10)
+    stop_tick_time = time.time()
+    while stop_tick_time - start_tick_time < 0.0625:
+        stop_tick_time = time.time()
 pygame.quit()
 sys.exit(return_value)
