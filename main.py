@@ -107,7 +107,6 @@ class Mob:
 
 
 class World:
-    default_settings = settings["default_world_settings"]
     settings = None
     map = None
     player = None
@@ -135,7 +134,7 @@ class World:
         for x in range(self.settings["world_length"]):
             terrain[x] = int(terrain[x])
         return terrain
-    def __init__(self, _settings: dict | None = default_settings) -> None:
+    def __init__(self, _settings: dict | None = settings["default_world_settings"]) -> None:
         self.settings = _settings
         self.map = [[Tile("air") for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
         terrain = self.noise()
