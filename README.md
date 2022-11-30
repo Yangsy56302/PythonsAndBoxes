@@ -18,7 +18,7 @@ Make sure the **assets** floder and the **data** floder are in the right place.
 
 If **main.exe** exists, just run it.
 
-If not, but you have Python3 and pip, run **main.bat**. The executable file should be created in few minutes.
+If not, but you have Python3 and pip, run **pre-build.bat** and **build.bat**. The executable file should be created in few minutes.
 
 ### Controls
 
@@ -27,10 +27,6 @@ If not, but you have Python3 and pip, run **main.bat**. The executable file shou
 * **D**: Move right
 * **BackQuote**: Zoom in by 2x
 * **Delete**: Quit game
-
-### Way to Quit
-
-Using close button of the console window.
 
 ## Version
 

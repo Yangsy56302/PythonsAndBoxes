@@ -2,6 +2,9 @@
     "window_length": 1024,
     "window_height": 768,
     "scale": 1,
+    "read_world": true,
+    "write_world": true,
+    "world_directory": ".\\world\\world.box",
     "default_world_settings": {
         "seed": 0,
         "world_length": 4096,

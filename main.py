@@ -3,11 +3,12 @@ import math
 import random
 import json
 import time
+import os
 import sys
 
 
 def import_settings() -> dict:
-    file = open(".\\data\\settings.json")
+    file = open(".\\data\\settings.json", mode="r")
     settings = json.load(file)
     file.close()
     return settings
@@ -19,6 +20,56 @@ window = pygame.display.set_mode((settings["window_length"], settings["window_he
 pygame.display.set_caption("PyBox")
 pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
 window.fill((0, 0, 0))
+
+
+class Data:
+    tile_data = None
+    mob_data = None
+    def load(self) -> None:
+        file = open(".\\data\\tiles.json", mode="r")
+        self.tile_data = json.load(file)
+        file.close()
+        file = open(".\\data\\mobs.json", mode="r")
+        self.mob_data = json.load(file)
+        file.close()
+    def __init__(self) -> None:
+        self.load()
+data = Data()
+
+
+class Assets:
+    tile_images = None
+    mob_images = None
+    def load(self) -> None:
+        self.tile_images = {}
+        self.mob_images = {}
+        for id in data.tile_data.keys():
+            self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
+        for id in data.mob_data.keys():
+            self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
+    def __init__(self) -> None:
+        self.load()
+assets = Assets()
+
+
+class Object:
+    id = None
+    state = None
+    def set_to_json(self) -> dict:
+        return {"id": self.id, "state": self.state}
+    def get_from_json(self, _json: dict) -> None:
+        self.id = _json["id"]
+        self.state = _json["state"]
+    def __init__(self, _json: dict) -> None:
+        self.get_from_json(_json)
+
+
+class Tile(Object):
+    pass
+
+
+class Mob(Object):
+    pass
 
 
 def get_key_states(_events, _states: dict = {}) -> dict:
@@ -54,62 +105,25 @@ def key_is_up(_states: dict, _key) -> bool:
         return False
 
 
-class Data:
-    tile_data = None
-    mob_data = None
-    def load(self) -> None:
-        file = open(".\\data\\tiles.json")
-        self.tile_data = json.load(file)
-        file.close()
-        file = open(".\\data\\mobs.json")
-        self.mob_data = json.load(file)
-        file.close()
-    def __init__(self) -> None:
-        self.load()
-data = Data()
-
-
-class Assets:
-    tile_images = None
-    mob_images = None
-    def load(self) -> None:
-        self.tile_images = {}
-        self.mob_images = {}
-        for id in data.tile_data.keys():
-            self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
-        for id in data.mob_data.keys():
-            self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
-    def __init__(self) -> None:
-        self.load()
-assets = Assets()
-
-
-class Tile:
-    id = None
-    state = None
-    def __init__(self, _id: str, _state: dict | None = None) -> None:
-        self.id = _id
-        if _state is None:
-            self.state = data.tile_data[self.id]["state"]
-        else:
-            self.state = _state
-
-
-class Mob:
-    id = None
-    state = None
-    def __init__(self, _id: str, _state: dict | None = None) -> None:
-        self.id = _id
-        if _state is None:
-            self.state = data.mob_data[self.id]["state"]
-        else:
-            self.state = _state
-
-
 class World:
     settings = None
     map = None
     player = None
+    def set_to_json(self) -> dict:
+        json_map = []
+        for x in range(self.settings["world_length"]):
+            json_map.append([])
+            for y in range(self.settings["world_height"]):
+                json_map[x].append(self.map[x][y].set_to_json())
+        return {"map": json_map, "player": self.player.set_to_json(), "settings": self.settings}
+    def get_from_json(self, _json: dict) -> None:
+        self.settings = _json["settings"]
+        self.map = []
+        for x in range(self.settings["world_length"]):
+            self.map.append([])
+            for y in range(self.settings["world_height"]):
+                self.map[x].append(Tile(_json["map"][x][y]))
+        self.player = Mob(_json["player"])
     def valid_coordinate(self, _x, _y) -> bool:
         return _x >= 0 and _x < self.settings["world_length"] and _y >= 0 and _y < self.settings["world_height"]
     def noise(self) -> list:
@@ -134,25 +148,31 @@ class World:
         for x in range(self.settings["world_length"]):
             terrain[x] = int(terrain[x])
         return terrain
-    def __init__(self, _settings: dict | None = settings["default_world_settings"]) -> None:
+    def create(self, _settings: dict) -> None:
         self.settings = _settings
-        self.map = [[Tile("air") for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
+        self.map = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
         terrain = self.noise()
         for x in range(self.settings["world_length"]):
             for y in range(min(terrain[x], self.settings["world_height"])):
-                self.map[x][y] = Tile("stone")
+                self.map[x][y] = Tile({"id": "stone", "state": {}})
                 if terrain[x] - y <= 4:
-                    self.map[x][y] = Tile("soil")
+                    self.map[x][y] = Tile({"id": "soil", "state": {}})
                 if terrain[x] - y == 1:
-                    self.map[x][y] = Tile("grassy_soil")
-        self.player = Mob("player")
+                    self.map[x][y] = Tile({"id": "grassy_soil", "state": {}})
+        self.player = Mob({"id": "player", "state": {}})
         self.player.state["x"] = float(int(self.settings["world_length"] / 2))
         self.player.state["y"] = float(terrain[int(self.settings["world_length"] / 2)])
         self.player.state["mx"] = 0.0
         self.player.state["my"] = 0.0
+    def __init__(self, _json: dict) -> None:
+        if _json == {}:
+            self.create(settings["default_world_settings"])
+        else:
+            self.get_from_json(_json)
     def mob_on_ground(self, _mob) -> bool:
+        # get tile's coordinate
         tile_coordinate = [[int(_mob.state["x"] + 0.03125), int(_mob.state["y"] - 0.03125)],
-                            [int(_mob.state["x"] + 0.96875), int(_mob.state["y"] - 0.03125)]]
+                           [int(_mob.state["x"] + 0.96875), int(_mob.state["y"] - 0.03125)]]
         for coordinate in tile_coordinate:
             if self.valid_coordinate(coordinate[0], coordinate[1]):
                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
@@ -173,9 +193,9 @@ class World:
         for i in range(max_move + 1):
             # get tile's coordinate
             tile_coordinate = [[int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.03125)],
-                                [int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.96875)],
-                                [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.03125)],
-                                [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
+                               [int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.96875)],
+                               [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.03125)],
+                               [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
             for j in range(len(tile_coordinate)):
                 if not self.valid_coordinate(tile_coordinate[j][0], tile_coordinate[j][1]):
                     _mob.state["x"] = float(int(self.settings["world_length"] / 2))
@@ -187,28 +207,28 @@ class World:
                 if "mob_transparent" not in data.tile_data[self.map[tile_coordinate[j][0]][tile_coordinate[j][1]].id]["tag"]:
                     if _mob.state["mx"] > 0:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
-                                            [int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
+                                           [int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["mx"] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
-                                            [int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
+                                           [int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["mx"] = 0.0
                     if _mob.state["my"] > 0:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] + 1.03125)],
-                                            [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] + 1.03125)]]
+                                           [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] + 1.03125)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["my"] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] - 0.03125)],
-                                            [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] - 0.03125)]]
+                                           [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] - 0.03125)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate[0], coordinate[1]):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
@@ -257,7 +277,12 @@ class World:
         player_image_unscaled = assets.mob_images["player"]
         player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["scale"], 16 * settings["scale"]))
         window.blit(player_image, ((settings["window_length"] - 16 * settings["scale"]) / 2, (settings["window_height"] - 16 * settings["scale"]) / 2))
-world = World()
+if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
+    file = open(settings["world_directory"], mode="r")
+    world = World(json.load(file))
+    file.close()
+else:
+    world = World({})
 
 
 def display(_x, _y):
@@ -278,4 +303,8 @@ while return_value == -1:
     while stop_tick_time - start_tick_time < 0.0625:
         stop_tick_time = time.time()
 pygame.quit()
+if settings["write_world"] == True:
+    file = open(settings["world_directory"], mode="w")
+    json.dump(world.set_to_json(), file)
+    file.close()
 sys.exit(return_value)
