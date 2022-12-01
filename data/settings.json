@@ -2,9 +2,10 @@
     "window_length": 1024,
     "window_height": 768,
     "scale": 1,
+    "print_type": ["info", "warning", "error"],
     "read_world": true,
     "write_world": true,
-    "world_directory": ".\\world\\world.box",
+    "world_directory": ".\\world\\world.json",
     "default_world_settings": {
         "seed": 0,
         "world_length": 4096,
