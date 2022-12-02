@@ -1,7 +1,8 @@
 {
     "window_length": 1024,
     "window_height": 768,
-    "scale": 1,
+    "map_scale": 1,
+    "gui_scale": 2,
     "print_type": ["info", "warning", "error"],
     "read_world": true,
     "write_world": true,

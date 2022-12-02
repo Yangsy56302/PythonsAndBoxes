@@ -1,153 +1,153 @@
 {
-  "air": {
-    "name": "Air",
-    "data": {
-      "mining_tool": "none",
-      "mining_level": 0,
-      "tile_drop": []
-    },
-    "state": {},
-    "tag": [
-      "unbreakable",
-      "replaceable",
-      "mob_transparent",
-      "light_transparent"
-    ]
-  },
-  "test_tile": {
-    "name": "Test Tile",
-    "data": {
-      "mining_tool": "none",
-      "mining_level": 0,
-      "tile_drop": [
-        {
-          "item": "test_item",
-          "count": 1
-        }
-      ]
-    },
-    "state": {},
-    "tag": []
-  },
-  "stone": {
-    "name": "Stone",
-    "data": {
-      "mining_tool": "pickaxe",
-      "mining_level": 1,
-      "tile_drop": [
-        {
-          "item": "rock",
-          "count": 1
-        }
-      ]
-    },
-    "state": {},
-    "tag": ["stone"]
-  },
-  "soil": {
-    "name": "Soil",
-    "data": {
-      "mining_tool": "shovel",
-      "mining_level": 0,
-      "tile_drop": [
-        {
-          "item": "dirt",
-          "count": 1
-        }
-      ]
-    },
-    "state": {},
-    "tag": [
-      "soil",
-      "falling_tile"
-    ]
-  },
-  "grassy_soil": {
-    "name": "Grassy Soil",
-    "data": {
-      "mining_tool": "shovel",
-      "mining_level": 0,
-      "tile_drop": [
-        {
-          "item": "dirt",
-          "count": 1
+    "air": {
+        "name": "Air",
+        "data": {
+            "mining_tool": "none",
+            "mining_level": 0,
+            "tile_drop": []
         },
-        {
-          "item": "grass",
-          "count": 1
-        }
-      ]
+        "state": {},
+        "tag": [
+            "unbreakable",
+            "replaceable",
+            "mob_transparent",
+            "light_transparent"
+        ]
     },
-    "state": {},
-    "tag": ["soil"]
-  },
-  "log": {
-    "name": "Log",
-    "data": {
-      "mining_tool": "axe",
-      "mining_level": 1,
-      "tile_drop": [
-        {
-          "item": "wood",
-          "count": 1
-        }
-      ]
-    },
-    "state": {},
-    "tag": []
-  },
-  "leaves": {
-    "name": "Leaves",
-    "data": {
-      "mining_tool": "none",
-      "mining_level": 0,
-      "tile_drop": []
-    },
-    "state": {},
-    "tag": []
-  },
-  "coal_ore": {
-    "name": "Coal Ore",
-    "data": {
-      "mining_tool": "pickaxe",
-      "mining_level": 1,
-      "tile_drop": [
-        {
-          "item": "rock",
-          "count": 1
+    "test_tile": {
+        "name": "Test Tile",
+        "data": {
+            "mining_tool": "none",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "item": "test_item",
+                    "count": 1
+                }
+            ]
         },
-        {
-          "item": "coal",
-          "count": 1
-        }
-      ]
+        "state": {},
+        "tag": []
     },
-    "state": {},
-    "tag": [
-      "stone",
-      "ore"
-    ]
-  },
-  "iron_ore": {
-    "name": "Iron Ore",
-    "data": {
-      "mining_tool": "pickaxe",
-      "mining_level": 1,
-      "tile_drop": [
-        {
-          "item": "rock",
-          "count": 1
+    "stone": {
+        "name": "Stone",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "item": "rock",
+                    "count": 1
+                }
+            ]
         },
-        {
-          "item": "iron_ore",
-          "count": 1
-        }
-      ]
+        "state": {},
+        "tag": ["stone"]
     },
-    "state": {},
-    "tag": [
-      "stone",
-      "ore"
-    ]
-  }
+    "soil": {
+        "name": "Soil",
+        "data": {
+            "mining_tool": "shovel",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "item": "dirt",
+                    "count": 1
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "soil",
+            "falling_tile"
+        ]
+    },
+    "grassy_soil": {
+        "name": "Grassy Soil",
+        "data": {
+            "mining_tool": "shovel",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "item": "dirt",
+                    "count": 1
+                },
+                {
+                    "item": "grass",
+                    "count": 1
+                }
+            ]
+        },
+        "state": {},
+        "tag": ["soil"]
+    },
+    "log": {
+        "name": "Log",
+        "data": {
+            "mining_tool": "axe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "item": "wood",
+                    "count": 1
+                }
+            ]
+        },
+        "state": {},
+        "tag": []
+    },
+    "leaves": {
+        "name": "Leaves",
+        "data": {
+            "mining_tool": "none",
+            "mining_level": 0,
+            "tile_drop": []
+        },
+        "state": {},
+        "tag": []
+    },
+    "coal_ore": {
+        "name": "Coal Ore",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "item": "rock",
+                    "count": 1
+                },
+                {
+                    "item": "coal",
+                    "count": 1
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "stone",
+            "ore"
+        ]
+    },
+    "iron_ore": {
+        "name": "Iron Ore",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "item": "rock",
+                    "count": 1
+                },
+                {
+                    "item": "iron_ore",
+                    "count": 1
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "stone",
+            "ore"
+        ]
+    }
 }

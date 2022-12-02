@@ -7,15 +7,31 @@ import time
 import threading
 
 
-if __name__ != "__main__":
-    print("[ERROR] Please don't import main.py as a module or run main.exe indirectly.")
-    print("[ERROR] Program will close in 10 seconds...")
-    time.sleep(10)
+class Error(Exception):
+    info: str = ""
+    def __init__(self, _info: str = "No Info."):
+        self.info = _info
+    def __str__(self):
+        return self.info
+
+
+class NameIsNotMainError(Error):
+    def __init__(self):
+        Error.__init__(self, "The value of __name__ is not \"__main__\".")
+
+
+try:
+    if __name__ != "__main__":
+        raise NameIsNotMainError()
+except NameIsNotMainError as error:
+    print("[ERROR]", str(error))
     sys.exit(1)
 
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
 import pygame
+print("Thank you for playing this game!")
+print("This game uses pygame to build. Support them!")
 
 
 def import_settings() -> dict:
@@ -69,9 +85,9 @@ window.fill((0, 0, 0))
 
 
 class Data:
-    tile_data = None
-    item_data = None
-    mob_data = None
+    tile_data: dict = None
+    item_data: dict = None
+    mob_data: dict = None
     def load(self) -> None:
         file = open(".\\data\\tiles.json", mode="r")
         self.tile_data = json.load(file)
@@ -83,32 +99,48 @@ class Data:
         self.mob_data = json.load(file)
         file.close()
     def __init__(self) -> None:
+        print_info("Loading Data...")
         self.load()
+        print_info("Done.")
 data = Data()
 
 
 class Assets:
-    tile_images = None
-    item_images = None
-    mob_images = None
+    tile_images: dict = None
+    item_images: dict = None
+    mob_images: dict = None
     def load(self) -> None:
         self.tile_images = {}
         self.item_images = {}
         self.mob_images = {}
-        for id in data.tile_data.keys():
+        count = 0
+        max_count = len(data.tile_data)
+        for id in data.tile_data:
             self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
-        for id in data.item_data.keys():
+            count += 1
+            print_progress_bar(count, max_count, "Loading Tile Images")
+        count = 0
+        max_count = len(data.item_data)
+        for id in data.item_data:
             self.item_images[id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()
-        for id in data.mob_data.keys():
+            count += 1
+            print_progress_bar(count, max_count, "Loading Item Images")
+        count = 0
+        max_count = len(data.mob_data)
+        for id in data.mob_data:
             self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
+            count += 1
+            print_progress_bar(count, max_count, "Loading Mob Images")
     def __init__(self) -> None:
+        print_info("Loading Assets...")
         self.load()
+        print_info("Done.")
 assets = Assets()
 
 
 class Object:
-    id = None
-    state = None
+    id: str = None
+    state: dict = None
     def set_to_json(self) -> dict:
         return {"id": self.id, "state": self.state}
     def get_from_json(self, _json: dict) -> None:
@@ -122,12 +154,25 @@ class Tile(Object):
     pass
 
 
+class Item(Object):
+    pass
+
+
 class Mob(Object):
     pass
 
 
-class Item(Object):
-    pass
+class Player(Mob):
+    def set_to_json(self) -> dict:
+        return_value = {"id": self.id, "state": self.state}
+        for slot_number in range(len(self.state["backpack"])):
+            return_value["state"]["backpack"][slot_number] = self.state["backpack"][slot_number].set_to_json()
+        return return_value
+    def get_from_json(self, _json: dict) -> None:
+        self.id = _json["id"]
+        self.state = _json["state"]
+        for slot_number in range(len(_json["state"]["backpack"])):
+            self.state["backpack"][slot_number] = Item({"id": _json["state"]["backpack"][slot_number]["id"], "state": _json["state"]["backpack"][slot_number]["state"]})
 
 
 def get_mouse_states(_events, _states: dict):
@@ -210,9 +255,9 @@ def key_is_up(_states: dict, _key) -> bool:
 
 
 class World:
-    settings = None
-    map = None
-    player = None
+    settings: dict = None
+    map: list = None
+    player: Player = None
     def set_to_json(self) -> dict:
         json_map = []
         for x in range(self.settings["world_length"]):
@@ -227,7 +272,7 @@ class World:
             self.map.append([])
             for y in range(self.settings["world_height"]):
                 self.map[x].append(Tile(_json["map"][x][y]))
-        self.player = Mob(_json["player"])
+        self.player = Player(_json["player"])
     def valid_coordinate(self, _x, _y) -> bool:
         return _x >= 0 and _x < self.settings["world_length"] and _y >= 0 and _y < self.settings["world_height"]
     def noise(self) -> list:
@@ -264,7 +309,7 @@ class World:
                     self.map[x][y] = Tile({"id": "soil", "state": {}})
                 if terrain[x] - y == 1:
                     self.map[x][y] = Tile({"id": "grassy_soil", "state": {}})
-        self.player = Mob({"id": "player", "state": {}})
+        self.player = Player({"id": "player", "state": data.mob_data["player"]["state"]})
         self.player.state["x"] = float(int(self.settings["world_length"] / 2))
         self.player.state["y"] = float(terrain[int(self.settings["world_length"] / 2)])
         self.player.state["mx"] = 0.0
@@ -359,8 +404,8 @@ class World:
                 return True
         return False
     def mouse_to_map(self, _mouse_position: tuple) -> tuple:
-        x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["scale"]) * -1 + 0.5 + self.player.state["x"]
-        y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["scale"]) + 0.5 + self.player.state["y"]
+        x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) * -1 + 0.5 + self.player.state["x"]
+        y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + self.player.state["y"]
         return (x_coordinate, y_coordinate)
     def tick(self, _key_states: dict, _mouse_states: dict) -> int:
         self.player.state["mx"] = 0.0
@@ -373,9 +418,9 @@ class World:
         if key_is_down(_key_states, pygame.K_d):
             self.player.state["mx"] = data.mob_data["player"]["data"]["speed"]
         if key_is_down(_key_states, pygame.K_BACKQUOTE):
-            settings["scale"] = 2
+            settings["map_scale"] = 2
         else:
-            settings["scale"] = 1
+            settings["map_scale"] = 1
         if key_is_down(_key_states, pygame.K_DELETE):
             return 0
         if key_is_down(_mouse_states, "left"):
@@ -384,27 +429,35 @@ class World:
             self.place_tile(self.mouse_to_map(_mouse_states["position"]))
         self.player = self.move(self.player)
         return -1
-    def display(self, _x, _y) -> None:
-        float_x = math.modf(_x)[0]
-        float_y = math.modf(_y)[0]
-        int_x = int(_x)
-        int_y = int(_y)
+    def display(self, _coordinate: tuple) -> None:
+        # display map
+        float_x = math.modf(_coordinate[0])[0]
+        float_y = math.modf(_coordinate[1])[0]
+        int_x = int(_coordinate[0])
+        int_y = int(_coordinate[1])
         for offset_x in range(-64, 65):
             for offset_y in range(-64, 65):
                 tile_x = int_x + offset_x
                 tile_y = int_y + offset_y
                 if not self.valid_coordinate(tile_x, tile_y):
                     continue
-                current_tile = self.map[tile_x][tile_y]
-                current_image_unscaled = assets.tile_images[current_tile.id]
-                current_image = pygame.transform.scale(current_image_unscaled, (16 * settings["scale"], 16 * settings["scale"]))
-                current_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["scale"]) + settings["window_length"] / 2,
-                                          (int((offset_y - float_y) * -16 - 8) * settings["scale"]) + settings["window_height"] / 2)
-                window.blit(current_image, current_image_position)
+                tile = self.map[tile_x][tile_y]
+                tile_image_unscaled = assets.tile_images[tile.id]
+                tile_image = pygame.transform.scale(tile_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
+                tile_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
+                                       (int((offset_y - float_y) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
+                window.blit(tile_image, tile_image_position)
         # display the player in the middle
         player_image_unscaled = assets.mob_images["player"]
-        player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["scale"], 16 * settings["scale"]))
-        window.blit(player_image, ((settings["window_length"] - 16 * settings["scale"]) / 2, (settings["window_height"] - 16 * settings["scale"]) / 2))
+        player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
+        window.blit(player_image, ((settings["window_length"] - 16 * settings["map_scale"]) / 2, (settings["window_height"] - 16 * settings["map_scale"]) / 2))
+        # display the backpack
+        backpack = self.player.state["backpack"]
+        for slot in range(len(backpack)):
+            item_image_unscaled = assets.item_images[backpack[slot].id]
+            item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+            item_image_position = (int((slot * 16 - self.player.state["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2), settings["window_height"] - 16 * settings["gui_scale"])
+            window.blit(item_image, item_image_position)
 if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
     print_info("Reading World File...")
     file = open(settings["world_directory"], mode="r")
@@ -415,9 +468,9 @@ else:
     world = World({})
 
 
-def display(_x, _y):
+def display(_coordinate: tuple):
     window.fill((0, 0, 0))
-    world.display(_x, _y)
+    world.display(_coordinate)
     pygame.display.flip()
 
 
@@ -430,7 +483,7 @@ while return_value == -1:
     key_states = get_key_states(events, key_states)
     mouse_states = get_mouse_states(events, mouse_states)
     return_value = world.tick(key_states, mouse_states)
-    display(world.player.state["x"], world.player.state["y"])
+    display((world.player.state["x"], world.player.state["y"]))
     stop_tick_time = time.time()
     while stop_tick_time - start_tick_time < 0.0625:
         stop_tick_time = time.time()

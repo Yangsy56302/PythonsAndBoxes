@@ -1,55 +1,55 @@
 {
-  "nothing": {
-    "name": "Nothing",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "test_item": {
-    "name": "Test Item",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "rock": {
-    "name": "Rock",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "dirt": {
-    "name": "Dirt",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "wood": {
-    "name": "Wood",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "wooden_stick": {
-    "name": "Wooden Stick",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "flint": {
-    "name": "Flint",
-    "data": {},
-    "state": {},
-    "tag": []
-  },
-  "flint_pickaxe": {
-    "name": "Flint Pickaxe",
-    "data": {
-      "tool_info": {
-        "type": "pickaxe",
-        "level": 1
-      }
+    "empty": {
+        "name": "Empty",
+        "data": {},
+        "state": {},
+        "tag": []
     },
-    "state": {},
-    "tag": ["tool"]
-  }
+    "test_item": {
+        "name": "Test Item",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "rock": {
+        "name": "Rock",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "dirt": {
+        "name": "Dirt",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "wood": {
+        "name": "Wood",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "wooden_stick": {
+        "name": "Wooden Stick",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "flint": {
+        "name": "Flint",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "flint_pickaxe": {
+        "name": "Flint Pickaxe",
+        "data": {
+            "tool_info": {
+                "type": "pickaxe",
+                "level": 1
+            }
+        },
+        "state": {},
+        "tag": ["tool"]
+    }
 }
