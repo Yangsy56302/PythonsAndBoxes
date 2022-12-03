@@ -3,28 +3,28 @@
         "name": "Player",
         "data": {
             "max_health": 256,
+            "max_slot": 16,
             "speed": 0.25
         },
         "state": {
             "selected_slot": 0,
-            "max_slot": 16,
             "backpack": [
-                {"id": "test_item", "state": {"count": 32767}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}},
-                {"id": "empty", "state": {}}
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}},
+                {"id": "empty", "count": 0, "state": {}}
             ]
         },
         "tag": []

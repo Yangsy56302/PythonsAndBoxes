@@ -4,7 +4,7 @@ import math
 import random
 import json
 import time
-import threading
+import copy
 
 
 class Error(Exception):
@@ -31,7 +31,7 @@ except NameIsNotMainError as error:
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
 import pygame
 print("Thank you for playing this game!")
-print("This game uses pygame to build. Support them!")
+print("This game uses Pygame to build. Support them!")
 
 
 def import_settings() -> dict:
@@ -44,8 +44,7 @@ settings = import_settings()
 
 def print_info(*_values, _sep: str | None = " ", _end: str | None = "\n") -> bool:
     if "info" in settings["print_type"]:
-        print("[INFO]", end=" ")
-        print(*_values, sep=_sep, end=_end)
+        print("[INFO]", *_values, sep=_sep, end=_end)
         return True
     return False
 
@@ -82,6 +81,7 @@ window = pygame.display.set_mode((settings["window_length"], settings["window_he
 pygame.display.set_caption("PyBox")
 pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
 window.fill((0, 0, 0))
+screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)
 
 
 class Data:
@@ -155,7 +155,13 @@ class Tile(Object):
 
 
 class Item(Object):
-    pass
+    count: int = None
+    def set_to_json(self) -> dict:
+        return {"id": self.id, "count": self.count, "state": self.state}
+    def get_from_json(self, _json: dict) -> None:
+        self.id = _json["id"]
+        self.count = _json["count"]
+        self.state = _json["state"]
 
 
 class Mob(Object):
@@ -172,17 +178,23 @@ class Player(Mob):
         self.id = _json["id"]
         self.state = _json["state"]
         for slot_number in range(len(_json["state"]["backpack"])):
-            self.state["backpack"][slot_number] = Item({"id": _json["state"]["backpack"][slot_number]["id"], "state": _json["state"]["backpack"][slot_number]["state"]})
+            self.state["backpack"][slot_number] = Item({"id": _json["state"]["backpack"][slot_number]["id"],
+                                                        "count": _json["state"]["backpack"][slot_number]["count"],
+                                                        "state": _json["state"]["backpack"][slot_number]["state"]})
 
 
 def get_mouse_states(_events, _states: dict):
     states = _states
-    button_name = ["left", "middle", "right"]
+    button_name = ["left", "middle", "right", "scroll_up", "scroll_down"]
+    # set scroll to zero
+    states[button_name[3]] = 0
+    states[button_name[4]] = 0
     for event in _events:
+        # mouse moved
         if event.type == pygame.MOUSEMOTION:
             states["position"] = event.pos
             states["movement"] = event.rel
-            for button_number in range(len(button_name)):
+            for button_number in range(len(button_name[0:3])):
                 if event.buttons[button_number] == 1:
                     if button_name[button_number] not in _states:
                         states[button_name[button_number]] = "down"
@@ -197,20 +209,29 @@ def get_mouse_states(_events, _states: dict):
                         states[button_name[button_number]] = "up"
                     else:
                         states[button_name[button_number]] = "up_2"
+        # button pressed
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            states["position"] = event.pos
-            states["movement"] = (event.pos[0] - _states["position"][0], event.pos[1] - _states["position"][1])
-            if "down" not in _states[button_name[event.button - 1]]:
-                states[button_name[event.button - 1]] = "down"
+            if event.button - 1 in range(3):
+                if button_name[event.button - 1] not in _states:
+                    states[button_name[event.button - 1]] = "down"
+                elif "down" not in _states[button_name[event.button - 1]]:
+                    states[button_name[event.button - 1]] = "down"
+                else:
+                    states[button_name[event.button - 1]] = "down_2"
+            # special scroll detector
+            elif (event.button - 1) % 2 == 0:
+                states[button_name[4]] = int((event.button - 3) / 2)
             else:
-                states[button_name[event.button - 1]] = "down_2"
+                states[button_name[3]] = int((event.button - 2) / 2)
+        # button released
         elif event.type == pygame.MOUSEBUTTONUP:
-            states["position"] = event.pos
-            states["movement"] = (event.pos[0] - _states["position"][0], event.pos[1] - _states["position"][1])
-            if "up" not in _states[button_name[event.button - 1]]:
-                states[button_name[event.button - 1]] = "up"
-            else:
-                states[button_name[event.button - 1]] = "up_2"
+            if event.button - 1 in range(3):
+                if button_name[event.button - 1] not in _states:
+                    states[button_name[event.button - 1]] = "up"
+                elif "up" not in _states[button_name[event.button - 1]]:
+                    states[button_name[event.button - 1]] = "up"
+                else:
+                    states[button_name[event.button - 1]] = "up_2"
     return states
 
 
@@ -392,17 +413,77 @@ class World:
         _mob.state["y"] += list_y[-1]
         return _mob
     def break_tile(self, _coordinate: tuple) -> bool:
-        if self.valid_coordinate(_coordinate[0], _coordinate[1]):
-            if "unbreakable" not in data.tile_data[self.map[int(_coordinate[0])][int(_coordinate[1])].id]["tag"]:
-                self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
-                return True
-        return False
+        # is this coordinate valid?
+        if not self.valid_coordinate(_coordinate[0], _coordinate[1]):
+            return False
+        # is this tile breakable?
+        current_tile = self.map[int(_coordinate[0])][int(_coordinate[1])]
+        if "unbreakable" in data.tile_data[current_tile.id]["tag"]:
+            return False
+        current_tool = self.player.state["backpack"][self.player.state["selected_slot"]]
+        breakable_tile = False
+        if data.tile_data[current_tile.id]["data"]["mining_tool"] == "none":
+            breakable_tile = True
+        if data.tile_data[current_tile.id]["data"]["mining_level"] <= 0:
+            breakable_tile = True
+        if "tool" in data.item_data[current_tool.id]["tag"]:
+            if data.item_data[current_tool.id]["data"]["tool_info"]["type"] == data.tile_data[current_tile.id]["data"]["mining_tool"]:
+                if data.item_data[current_tool.id]["data"]["tool_info"]["level"] >= data.tile_data[current_tile.id]["data"]["mining_level"]:
+                    breakable_tile = True
+        if breakable_tile == True:
+            dropped_items = copy.deepcopy(data.tile_data[current_tile.id]["data"]["tile_drop"])
+        else:
+            return False
+        # get item
+        for slot in range(len(self.player.state["backpack"])):
+            for item in range(len(dropped_items)):
+                if dropped_items[item]["id"] == "empty" or dropped_items[item]["count"] == 0:
+                    continue
+                if self.player.state["backpack"][slot].id == dropped_items[item]["id"]:
+                    if self.player.state["backpack"][slot].state == dropped_items[item]["state"]:
+                        max_count = data.item_data[dropped_items[item]["id"]]["data"]["max_count"]
+                        free_space = max(0, max_count - self.player.state["backpack"][slot].count - dropped_items[item]["count"])
+                        addition = min(free_space, dropped_items[item]["count"])
+                        if addition > 0:
+                            self.player.state["backpack"][slot].count += addition
+                            dropped_items[item]["count"] -= addition
+                            if dropped_items[item]["count"] == 0:
+                                dropped_items[item] = {"id": "empty", "count": 0, "state": {}}
+        for slot in range(len(self.player.state["backpack"])):
+            for item in range(len(dropped_items)):
+                if dropped_items[item]["id"] == "empty" or dropped_items[item]["count"] == 0:
+                    continue
+                if self.player.state["backpack"][slot].id == "empty":
+                    self.player.state["backpack"][slot] = Item(dropped_items[item])
+                    dropped_items[item] = {"id": "empty", "count": 0, "state": {}}
+        # break tile
+        self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
+        return True
     def place_tile(self, _coordinate: tuple) -> bool:
         if self.valid_coordinate(_coordinate[0], _coordinate[1]):
             if "replaceable" in data.tile_data[self.map[int(_coordinate[0])][int(_coordinate[1])].id]["tag"]:
                 self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "test_tile", "state": {}})
                 return True
         return False
+    def place_tile(self, _coordinate: tuple) -> bool:
+        # is this coordinate valid?
+        if not self.valid_coordinate(_coordinate[0], _coordinate[1]):
+            return False
+        # is this tile replaceable?
+        current_tile = self.map[int(_coordinate[0])][int(_coordinate[1])]
+        if "replaceable" not in data.tile_data[current_tile.id]["tag"]:
+            return False
+        # is this item placeable?
+        current_item = self.player.state["backpack"][self.player.state["selected_slot"]]
+        if "placeable" not in data.item_data[current_item.id]["tag"]:
+            return False
+        # subtract one item
+        self.player.state["backpack"][self.player.state["selected_slot"]].count -= 1
+        if self.player.state["backpack"][self.player.state["selected_slot"]].count == 0:
+            self.player.state["backpack"][self.player.state["selected_slot"]] = Item({"id": "empty", "count": 0, "state": {}})
+        # set tile
+        self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile(data.item_data[current_item.id]["data"]["to_tile"])
+        return True
     def mouse_to_map(self, _mouse_position: tuple) -> tuple:
         x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) * -1 + 0.5 + self.player.state["x"]
         y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + self.player.state["y"]
@@ -427,6 +508,8 @@ class World:
             self.break_tile(self.mouse_to_map(_mouse_states["position"]))
         if key_is_down(_mouse_states, "right"):
             self.place_tile(self.mouse_to_map(_mouse_states["position"]))
+        self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
+        self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
         self.player = self.move(self.player)
         return -1
     def display(self, _coordinate: tuple) -> None:
@@ -446,18 +529,24 @@ class World:
                 tile_image = pygame.transform.scale(tile_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
                 tile_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
                                        (int((offset_y - float_y) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
-                window.blit(tile_image, tile_image_position)
+                screen.blit(tile_image, tile_image_position)
         # display the player in the middle
         player_image_unscaled = assets.mob_images["player"]
         player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
-        window.blit(player_image, ((settings["window_length"] - 16 * settings["map_scale"]) / 2, (settings["window_height"] - 16 * settings["map_scale"]) / 2))
+        screen.blit(player_image, ((settings["window_length"] - 16 * settings["map_scale"]) / 2, (settings["window_height"] - 16 * settings["map_scale"]) / 2))
         # display the backpack
         backpack = self.player.state["backpack"]
+        slot_image = pygame.Surface((16 * settings["gui_scale"], 16 * settings["gui_scale"])).convert_alpha()
         for slot in range(len(backpack)):
             item_image_unscaled = assets.item_images[backpack[slot].id]
             item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
-            item_image_position = (int((slot * 16 - self.player.state["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2), settings["window_height"] - 16 * settings["gui_scale"])
-            window.blit(item_image, item_image_position)
+            item_image_position = (int((slot * 16 - data.mob_data["player"]["data"]["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2), int(settings["window_height"] - 16 * settings["gui_scale"]))
+            if slot == self.player.state["selected_slot"]:
+                slot_image.fill("#8000FF80")
+            else:
+                slot_image.fill("#8040C080")
+            screen.blit(slot_image, item_image_position)
+            screen.blit(item_image, item_image_position)
 if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
     print_info("Reading World File...")
     file = open(settings["world_directory"], mode="r")
@@ -469,14 +558,16 @@ else:
 
 
 def display(_coordinate: tuple):
-    window.fill((0, 0, 0))
+    window.fill("#000000")
+    screen.fill("#00000000")
     world.display(_coordinate)
+    window.blit(screen, (0, 0))
     pygame.display.flip()
 
 
 return_value = -1
 key_states = {}
-mouse_states = {}
+mouse_states = {"left": "up", "middle": "up", "right": "up", "scroll_up": 0, "scroll_down": 0}
 while return_value == -1:
     start_tick_time = time.time()
     events = pygame.event.get()

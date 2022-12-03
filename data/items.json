@@ -1,49 +1,104 @@
 {
     "empty": {
         "name": "Empty",
-        "data": {},
+        "data": {
+            "max_count": 1
+        },
         "state": {},
         "tag": []
     },
     "test_item": {
         "name": "Test Item",
-        "data": {},
+        "data": {
+            "max_count": 4,
+            "to_tile": {
+                "id": "test_tile",
+                "state": {}
+            }
+        },
         "state": {},
-        "tag": []
+        "tag": ["placeable"]
     },
     "rock": {
         "name": "Rock",
-        "data": {},
+        "data": {
+            "max_count": 256
+        },
         "state": {},
         "tag": []
     },
     "dirt": {
         "name": "Dirt",
-        "data": {},
+        "data": {
+            "max_count": 256,
+            "to_tile": {
+                "id": "soil",
+                "state": {}
+            }
+        },
         "state": {},
-        "tag": []
+        "tag": ["placeable"]
+    },
+    "grass": {
+        "name": "Grass",
+        "data": {
+            "max_count": 256,
+            "to_tile": {
+                "id": "grass",
+                "state": {}
+            }
+        },
+        "state": {},
+        "tag": ["placeable"]
     },
     "wood": {
         "name": "Wood",
-        "data": {},
+        "data": {
+            "max_count": 256,
+            "to_tile": {
+                "id": "wood",
+                "state": {}
+            }
+        },
+        "state": {},
+        "tag": ["placeable"]
+    },
+    "flint": {
+        "name": "Flint",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "coal": {
+        "name": "Coal",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "iron_ore": {
+        "name": "Iron Ore",
+        "data": {
+            "max_count": 256
+        },
         "state": {},
         "tag": []
     },
     "wooden_stick": {
         "name": "Wooden Stick",
-        "data": {},
-        "state": {},
-        "tag": []
-    },
-    "flint": {
-        "name": "Flint",
-        "data": {},
+        "data": {
+            "max_count": 256
+        },
         "state": {},
         "tag": []
     },
     "flint_pickaxe": {
         "name": "Flint Pickaxe",
         "data": {
+            "max_count": 1,
             "tool_info": {
                 "type": "pickaxe",
                 "level": 1

@@ -21,8 +21,9 @@
             "mining_level": 0,
             "tile_drop": [
                 {
-                    "item": "test_item",
-                    "count": 1
+                    "id": "test_item",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
@@ -36,8 +37,9 @@
             "mining_level": 1,
             "tile_drop": [
                 {
-                    "item": "rock",
-                    "count": 1
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
@@ -51,8 +53,9 @@
             "mining_level": 0,
             "tile_drop": [
                 {
-                    "item": "dirt",
-                    "count": 1
+                    "id": "dirt",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
@@ -69,12 +72,14 @@
             "mining_level": 0,
             "tile_drop": [
                 {
-                    "item": "dirt",
-                    "count": 1
+                    "id": "dirt",
+                    "count": 1,
+                    "state": {}
                 },
                 {
-                    "item": "grass",
-                    "count": 1
+                    "id": "grass",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
@@ -88,8 +93,9 @@
             "mining_level": 1,
             "tile_drop": [
                 {
-                    "item": "wood",
-                    "count": 1
+                    "id": "wood",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
@@ -113,12 +119,14 @@
             "mining_level": 1,
             "tile_drop": [
                 {
-                    "item": "rock",
-                    "count": 1
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
                 },
                 {
-                    "item": "coal",
-                    "count": 1
+                    "id": "coal",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
@@ -135,12 +143,14 @@
             "mining_level": 1,
             "tile_drop": [
                 {
-                    "item": "rock",
-                    "count": 1
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
                 },
                 {
-                    "item": "iron_ore",
-                    "count": 1
+                    "id": "iron_ore",
+                    "count": 1,
+                    "state": {}
                 }
             ]
         },
