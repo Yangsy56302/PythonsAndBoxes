@@ -30,7 +30,7 @@ except NameIsNotMainError as error:
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
 import pygame
-print("Thank you for playing this game!")
+print("Thank you for playing Pythons&Boxes!")
 print("This game uses Pygame to build. Support them!")
 
 
@@ -78,7 +78,7 @@ def print_progress_bar(_finished: float, _total: float, _information: str) -> No
 
 pygame.init()
 window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
-pygame.display.set_caption("PyBox")
+pygame.display.set_caption("Pythons&Boxes")
 pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
 window.fill((0, 0, 0))
 screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)

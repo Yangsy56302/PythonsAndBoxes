@@ -1,10 +1,10 @@
-# PythonSandbox
+# Pythons&Boxes
 
-**PythonSandbox** is a sandbox game using Python for code, like its *temp* name.
+**Pythons&Boxes** is a sandbox game using Python for code, like its *temp* name.
 
 ## Game info
 
-Assets and data are stored in some .json file, so anyone can change it for fun.
+Assets and data are stored in some .json file, so you can change it for fun.
 
 Multiplayer is not in our plan.
 
@@ -14,7 +14,7 @@ This game is free for now (maybe free forever).
 
 Download all files and put them into one directory.
 
-Make sure the **assets** floder and the **data** floder are in the right place.
+Make sure these **assets**, **data** and **world** floder are in the right place.
 
 If **main.exe** exists, just run it.
 
