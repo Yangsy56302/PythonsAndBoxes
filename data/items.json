@@ -42,14 +42,10 @@
     "grass": {
         "name": "Grass",
         "data": {
-            "max_count": 256,
-            "to_tile": {
-                "id": "grass",
-                "state": {}
-            }
+            "max_count": 256
         },
         "state": {},
-        "tag": ["placeable"]
+        "tag": []
     },
     "wood": {
         "name": "Wood",

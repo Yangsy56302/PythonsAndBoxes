@@ -294,8 +294,8 @@ class World:
             for y in range(self.settings["world_height"]):
                 self.map[x].append(Tile(_json["map"][x][y]))
         self.player = Player(_json["player"])
-    def valid_coordinate(self, _x, _y) -> bool:
-        return _x >= 0 and _x < self.settings["world_length"] and _y >= 0 and _y < self.settings["world_height"]
+    def valid_coordinate(self, _coordinate) -> bool:
+        return _coordinate[0] >= 0 and _coordinate[0] < self.settings["world_length"] and _coordinate[1] >= 0 and _coordinate[1] < self.settings["world_height"]
     def noise(self) -> list:
         random.seed(self.settings["seed"])
         terrain = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
@@ -324,12 +324,30 @@ class World:
         terrain = self.noise()
         for x in range(self.settings["world_length"]):
             print_progress_bar(x, self.settings["world_length"], "Creating New World")
-            for y in range(min(terrain[x], self.settings["world_height"])):
-                self.map[x][y] = Tile({"id": "stone", "state": {}})
-                if terrain[x] - y <= 4:
-                    self.map[x][y] = Tile({"id": "soil", "state": {}})
+            dirt_thick = random.choice(range(3, 6))
+            for y in range(terrain[x]):
+                if not self.valid_coordinate((x, y)):
+                    break
                 if terrain[x] - y == 1:
                     self.map[x][y] = Tile({"id": "grassy_soil", "state": {}})
+                    if self.valid_coordinate((x, y + 1)):
+                        random_number = random.choice(range(4))
+                        if random_number == 0:
+                            self.map[x][y + 1] = Tile({"id": "grass", "state": {}})
+                elif terrain[x] - y <= dirt_thick:
+                    random_number = random.choice(range(16))
+                    if random_number == 0:
+                        self.map[x][y] = Tile({"id": "gravel", "state": {}})
+                    else:
+                        self.map[x][y] = Tile({"id": "soil", "state": {}})
+                else:
+                    random_number = random.choice(range(64))
+                    if random_number == 0:
+                        self.map[x][y] = Tile({"id": "coal_ore", "state": {}})
+                    elif random_number == 1:
+                        self.map[x][y] = Tile({"id": "iron_ore", "state": {}})
+                    else:
+                        self.map[x][y] = Tile({"id": "stone", "state": {}})
         self.player = Player({"id": "player", "state": data.mob_data["player"]["state"]})
         self.player.state["x"] = float(int(self.settings["world_length"] / 2))
         self.player.state["y"] = float(terrain[int(self.settings["world_length"] / 2)])
@@ -347,7 +365,7 @@ class World:
         tile_coordinate = [[int(_mob.state["x"] + 0.03125), int(_mob.state["y"] - 0.03125)],
                            [int(_mob.state["x"] + 0.96875), int(_mob.state["y"] - 0.03125)]]
         for coordinate in tile_coordinate:
-            if self.valid_coordinate(coordinate[0], coordinate[1]):
+            if self.valid_coordinate(coordinate):
                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                     return True
         return False
@@ -370,7 +388,7 @@ class World:
                                [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.03125)],
                                [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
             for j in range(len(tile_coordinate)):
-                if not self.valid_coordinate(tile_coordinate[j][0], tile_coordinate[j][1]):
+                if not self.valid_coordinate(tile_coordinate[j]):
                     _mob.state["x"] = float(int(self.settings["world_length"] / 2))
                     _mob.state["y"] = 250.0
                     _mob.state["mx"] = 0.0
@@ -382,28 +400,28 @@ class World:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
-                            if self.valid_coordinate(coordinate[0], coordinate[1]):
+                            if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["mx"] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
-                            if self.valid_coordinate(coordinate[0], coordinate[1]):
+                            if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["mx"] = 0.0
                     if _mob.state["my"] > 0:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] + 1.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] + 1.03125)]]
                         for coordinate in tile_coordinate:
-                            if self.valid_coordinate(coordinate[0], coordinate[1]):
+                            if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["my"] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] - 0.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] - 0.03125)]]
                         for coordinate in tile_coordinate:
-                            if self.valid_coordinate(coordinate[0], coordinate[1]):
+                            if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     _mob.state["my"] = 0.0
                     _mob.state["x"] += list_x[i - 1]
@@ -414,7 +432,7 @@ class World:
         return _mob
     def break_tile(self, _coordinate: tuple) -> bool:
         # is this coordinate valid?
-        if not self.valid_coordinate(_coordinate[0], _coordinate[1]):
+        if not self.valid_coordinate(_coordinate):
             return False
         # is this tile breakable?
         current_tile = self.map[int(_coordinate[0])][int(_coordinate[1])]
@@ -460,14 +478,14 @@ class World:
         self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
         return True
     def place_tile(self, _coordinate: tuple) -> bool:
-        if self.valid_coordinate(_coordinate[0], _coordinate[1]):
+        if self.valid_coordinate(_coordinate):
             if "replaceable" in data.tile_data[self.map[int(_coordinate[0])][int(_coordinate[1])].id]["tag"]:
                 self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "test_tile", "state": {}})
                 return True
         return False
     def place_tile(self, _coordinate: tuple) -> bool:
         # is this coordinate valid?
-        if not self.valid_coordinate(_coordinate[0], _coordinate[1]):
+        if not self.valid_coordinate(_coordinate):
             return False
         # is this tile replaceable?
         current_tile = self.map[int(_coordinate[0])][int(_coordinate[1])]
@@ -522,7 +540,7 @@ class World:
             for offset_y in range(-64, 65):
                 tile_x = int_x + offset_x
                 tile_y = int_y + offset_y
-                if not self.valid_coordinate(tile_x, tile_y):
+                if not self.valid_coordinate((tile_x, tile_y)):
                     continue
                 tile = self.map[tile_x][tile_y]
                 tile_image_unscaled = assets.tile_images[tile.id]

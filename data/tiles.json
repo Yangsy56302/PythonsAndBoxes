@@ -65,6 +65,22 @@
             "falling_tile"
         ]
     },
+    "gravel": {
+        "name": "Grass",
+        "data": {
+            "mining_tool": "shovel",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "id": "flint",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": []
+    },
     "grassy_soil": {
         "name": "Grassy Soil",
         "data": {
@@ -85,6 +101,25 @@
         },
         "state": {},
         "tag": ["soil"]
+    },
+    "grass": {
+        "name": "Grass",
+        "data": {
+            "mining_tool": "none",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "id": "grass",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "mob_transparent",
+            "light_transparent"
+        ]
     },
     "log": {
         "name": "Log",
@@ -108,6 +143,22 @@
             "mining_tool": "none",
             "mining_level": 0,
             "tile_drop": []
+        },
+        "state": {},
+        "tag": []
+    },
+    "wood": {
+        "name": "Wood",
+        "data": {
+            "mining_tool": "axe",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "id": "wood",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
         },
         "state": {},
         "tag": []
