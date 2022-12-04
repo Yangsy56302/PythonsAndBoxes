@@ -1,0 +1,39 @@
+[
+    {
+        "from": [
+            {
+                "id": "flint",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "wooden_stick",
+                "count": 4,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "flint_pickaxe",
+                "count": 1,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
+                "id": "wood",
+                "count": 1,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "wooden_stick",
+                "count": 4,
+                "state": {}
+            }
+        ]
+    }
+]

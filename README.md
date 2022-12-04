@@ -25,6 +25,12 @@ If not, but you have Python3 and pip, run **pre-build.bat** and **build.bat**. T
 * **Space**: Jump
 * **A**: Move left
 * **D**: Move right
+* **Left Mouse Button**: Break tile
+* **Right Mouse Button**: Place tile
+* **Mouse Wheel**: Select item
+* **C**: Open / Close Crafting Menu
+  * **Mouse Wheel**: Select Recipe
+  * **Space**: Craft
 * **BackQuote**: Zoom in by 2x
 * **Delete**: Quit game
 

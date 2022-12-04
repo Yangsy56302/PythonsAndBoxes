@@ -10,7 +10,7 @@
     "test_item": {
         "name": "Test Item",
         "data": {
-            "max_count": 4,
+            "max_count": 16384,
             "to_tile": {
                 "id": "test_tile",
                 "state": {}

@@ -9,14 +9,14 @@ import copy
 
 class Error(Exception):
     info: str = ""
-    def __init__(self, _info: str = "No Info."):
+    def __init__(self, _info: str = "No Info.") -> None:
         self.info = _info
-    def __str__(self):
+    def __str__(self) -> str:
         return self.info
 
 
 class NameIsNotMainError(Error):
-    def __init__(self):
+    def __init__(self) -> None:
         Error.__init__(self, "The value of __name__ is not \"__main__\".")
 
 
@@ -51,16 +51,14 @@ def print_info(*_values, _sep: str | None = " ", _end: str | None = "\n") -> boo
 
 def print_warning(*_values, _sep: str | None = " ", _end: str | None = "\n") -> bool:
     if "warning" in settings["print_type"]:
-        print("[WARNING]", end=" ")
-        print(*_values, sep=_sep, end=_end)
+        print("[WARNING]", *_values, sep=_sep, end=_end)
         return True
     return False
 
 
 def print_error(*_values, _sep: str | None = " ", _end: str | None = "\n") -> bool:
     if "error" in settings["print_type"]:
-        print("[ERROR]", end=" ")
-        print(*_values, sep=_sep, end=_end)
+        print("[ERROR]", *_values, sep=_sep, end=_end)
         return True
     return False
 
@@ -88,6 +86,7 @@ class Data:
     tile_data: dict = None
     item_data: dict = None
     mob_data: dict = None
+    recipe_data: dict = None
     def load(self) -> None:
         file = open(".\\data\\tiles.json", mode="r")
         self.tile_data = json.load(file)
@@ -97,6 +96,9 @@ class Data:
         file.close()
         file = open(".\\data\\mobs.json", mode="r")
         self.mob_data = json.load(file)
+        file.close()
+        file = open(".\\data\\recipes.json", mode="r")
+        self.recipe_data = json.load(file)
         file.close()
     def __init__(self) -> None:
         print_info("Loading Data...")
@@ -165,7 +167,57 @@ class Item(Object):
 
 
 class Mob(Object):
-    pass
+    def count_item(self, _item: Item) -> bool:
+        if _item.id == "empty":
+            return 0
+        return_value = 0
+        for slot in range(len(self.state["backpack"])):
+            if self.state["backpack"][slot].id == _item.id:
+                if self.state["backpack"][slot].state == _item.state:
+                    return_value += self.state["backpack"][slot].count
+        return return_value
+    def add_item(self, _item: Item) -> bool:
+        for slot in range(len(self.state["backpack"])):
+            if _item.id == "empty" or _item.count == 0:
+                break
+            if self.state["backpack"][slot].id == _item.id:
+                if self.state["backpack"][slot].state == _item.state:
+                    max_count = data.item_data[_item.id]["data"]["max_count"]
+                    free_space = max(0, max_count - self.state["backpack"][slot].count - _item.count)
+                    addition = min(free_space, _item.count)
+                    if addition > 0:
+                        self.state["backpack"][slot].count += addition
+                        _item.count -= addition
+                        if _item.count == 0:
+                            _item = Item({"id": "empty", "count": 0, "state": {}})
+        for slot in range(len(self.state["backpack"])):
+            if _item.id == "empty" or _item.count == 0:
+                break
+            if self.state["backpack"][slot].id == "empty":
+                self.state["backpack"][slot] = _item
+                _item = Item({"id": "empty", "count": 0, "state": {}})
+        if _item.id == "empty" or _item.count == 0:
+            return True
+        else:
+            return False
+    def subtract_item(self, _item: Item) -> bool:
+        for slot in range(len(self.state["backpack"])):
+            if _item.id == "empty" or _item.count == 0:
+                break
+            if self.state["backpack"][slot].id == _item.id:
+                if self.state["backpack"][slot].state == _item.state:
+                    subtraction = min(self.state["backpack"][slot].count, _item.count)
+                    if subtraction > 0:
+                        self.state["backpack"][slot].count -= subtraction
+                        _item.count -= subtraction
+                        if self.state["backpack"][slot].count == 0:
+                            self.state["backpack"][slot] = Item({"id": "empty", "count": 0, "state": {}})
+                        if _item.count == 0:
+                            _item = Item({"id": "empty", "count": 0, "state": {}})
+        if _item.id == "empty" or _item.count == 0:
+            return True
+        else:
+            return False
 
 
 class Player(Mob):
@@ -185,7 +237,11 @@ class Player(Mob):
 
 def get_mouse_states(_events, _states: dict):
     states = _states
+    # add the underline to the pressed button
     button_name = ["left", "middle", "right", "scroll_up", "scroll_down"]
+    for button_number in range(len(button_name[0:3])):
+        if "_" not in states[button_name[button_number]]:
+            states[button_name[button_number]] += "_"
     # set scroll to zero
     states[button_name[3]] = 0
     states[button_name[4]] = 0
@@ -196,28 +252,13 @@ def get_mouse_states(_events, _states: dict):
             states["movement"] = event.rel
             for button_number in range(len(button_name[0:3])):
                 if event.buttons[button_number] == 1:
-                    if button_name[button_number] not in _states:
-                        states[button_name[button_number]] = "down"
-                    elif "down" not in _states[button_name[button_number]]:
-                        states[button_name[button_number]] = "down"
-                    else:
-                        states[button_name[button_number]] = "down_2"
+                    states[button_name[button_number]] = "down"
                 else:
-                    if button_name[button_number] not in _states:
-                        states[button_name[button_number]] = "up"
-                    elif "up" not in _states[button_name[button_number]]:
-                        states[button_name[button_number]] = "up"
-                    else:
-                        states[button_name[button_number]] = "up_2"
+                    states[button_name[button_number]] = "up"
         # button pressed
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button - 1 in range(3):
-                if button_name[event.button - 1] not in _states:
-                    states[button_name[event.button - 1]] = "down"
-                elif "down" not in _states[button_name[event.button - 1]]:
-                    states[button_name[event.button - 1]] = "down"
-                else:
-                    states[button_name[event.button - 1]] = "down_2"
+                states[button_name[event.button - 1]] = "down"
             # special scroll detector
             elif (event.button - 1) % 2 == 0:
                 states[button_name[4]] = int((event.button - 3) / 2)
@@ -226,32 +267,20 @@ def get_mouse_states(_events, _states: dict):
         # button released
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button - 1 in range(3):
-                if button_name[event.button - 1] not in _states:
-                    states[button_name[event.button - 1]] = "up"
-                elif "up" not in _states[button_name[event.button - 1]]:
-                    states[button_name[event.button - 1]] = "up"
-                else:
-                    states[button_name[event.button - 1]] = "up_2"
+                states[button_name[event.button - 1]] = "up"
     return states
 
 
 def get_key_states(_events, _states: dict) -> dict:
     states = _states
+    for state in states:
+        if "_" not in states[state]:
+            states[state] += "_"
     for event in _events:
         if event.type == pygame.KEYDOWN:
-            if event.key not in _states:
-                states[event.key] = "down"
-            elif "down" not in _states[event.key]:
-                states[event.key] = "down"
-            else:
-                states[event.key] = "down_2"
+            states[event.key] = "down"
         if event.type == pygame.KEYUP:
-            if event.key not in _states:
-                states[event.key] = "up"
-            elif "up" not in _states[event.key]:
-                states[event.key] = "up"
-            else:
-                states[event.key] = "up_2"
+            states[event.key] = "up"
     return states
 
 
@@ -265,9 +294,29 @@ def key_is_down(_states: dict, _key) -> bool:
         return False
 
 
+def key_is_just_down(_states: dict, _key) -> bool:
+    if _key in _states:
+        if _states[_key] == "down":
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
 def key_is_up(_states: dict, _key) -> bool:
     if _key in _states:
         if "up" in _states[_key]:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
+def key_is_just_up(_states: dict, _key) -> bool:
+    if _key in _states:
+        if _states[_key] == "up":
             return True
         else:
             return False
@@ -449,40 +498,15 @@ class World:
                 if data.item_data[current_tool.id]["data"]["tool_info"]["level"] >= data.tile_data[current_tile.id]["data"]["mining_level"]:
                     breakable_tile = True
         if breakable_tile == True:
-            dropped_items = copy.deepcopy(data.tile_data[current_tile.id]["data"]["tile_drop"])
+            dropped_items = data.tile_data[current_tile.id]["data"]["tile_drop"]
         else:
             return False
         # get item
-        for slot in range(len(self.player.state["backpack"])):
-            for item in range(len(dropped_items)):
-                if dropped_items[item]["id"] == "empty" or dropped_items[item]["count"] == 0:
-                    continue
-                if self.player.state["backpack"][slot].id == dropped_items[item]["id"]:
-                    if self.player.state["backpack"][slot].state == dropped_items[item]["state"]:
-                        max_count = data.item_data[dropped_items[item]["id"]]["data"]["max_count"]
-                        free_space = max(0, max_count - self.player.state["backpack"][slot].count - dropped_items[item]["count"])
-                        addition = min(free_space, dropped_items[item]["count"])
-                        if addition > 0:
-                            self.player.state["backpack"][slot].count += addition
-                            dropped_items[item]["count"] -= addition
-                            if dropped_items[item]["count"] == 0:
-                                dropped_items[item] = {"id": "empty", "count": 0, "state": {}}
-        for slot in range(len(self.player.state["backpack"])):
-            for item in range(len(dropped_items)):
-                if dropped_items[item]["id"] == "empty" or dropped_items[item]["count"] == 0:
-                    continue
-                if self.player.state["backpack"][slot].id == "empty":
-                    self.player.state["backpack"][slot] = Item(dropped_items[item])
-                    dropped_items[item] = {"id": "empty", "count": 0, "state": {}}
+        for item in range(len(dropped_items)):
+            self.player.add_item(Item(dropped_items[item]))
         # break tile
         self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
         return True
-    def place_tile(self, _coordinate: tuple) -> bool:
-        if self.valid_coordinate(_coordinate):
-            if "replaceable" in data.tile_data[self.map[int(_coordinate[0])][int(_coordinate[1])].id]["tag"]:
-                self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "test_tile", "state": {}})
-                return True
-        return False
     def place_tile(self, _coordinate: tuple) -> bool:
         # is this coordinate valid?
         if not self.valid_coordinate(_coordinate):
@@ -506,7 +530,9 @@ class World:
         x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) * -1 + 0.5 + self.player.state["x"]
         y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + self.player.state["y"]
         return (x_coordinate, y_coordinate)
-    def tick(self, _key_states: dict, _mouse_states: dict) -> int:
+    def tick(self, _key_states: dict, _mouse_states: dict) -> str:
+        if key_is_just_down(_key_states, pygame.K_DELETE):
+            return "quit"
         self.player.state["mx"] = 0.0
         self.player.state["my"] += self.settings["gravity"]
         if key_is_down(_key_states, pygame.K_SPACE):
@@ -520,8 +546,6 @@ class World:
             settings["map_scale"] = 2
         else:
             settings["map_scale"] = 1
-        if key_is_down(_key_states, pygame.K_DELETE):
-            return 0
         if key_is_down(_mouse_states, "left"):
             self.break_tile(self.mouse_to_map(_mouse_states["position"]))
         if key_is_down(_mouse_states, "right"):
@@ -529,8 +553,27 @@ class World:
         self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
         self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
         self.player = self.move(self.player)
-        return -1
-    def display(self, _coordinate: tuple) -> None:
+        if key_is_just_down(_key_states, pygame.K_c):
+            return "craft"
+        return "do_nothing"
+    def crafts(self, _key_states: dict, _mouse_states: dict) -> str:
+        if "selected_recipe" not in self.player.state["temporary"]:
+            self.player.state["temporary"]["selected_recipe"] = 0
+        self.player.state["temporary"]["selected_recipe"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
+        self.player.state["temporary"]["selected_recipe"] %= len(data.recipe_data)
+        selected_recipe = self.player.state["temporary"]["selected_recipe"]
+        if key_is_just_down(_key_states, pygame.K_SPACE):
+            for material in range(len(data.recipe_data[selected_recipe]["from"])):
+                if self.player.count_item(Item(data.recipe_data[selected_recipe]["from"][material])) < data.recipe_data[selected_recipe]["from"][material]["count"]:
+                    return "nothing"
+            for material in range(len(data.recipe_data[selected_recipe]["from"])):\
+                self.player.subtract_item(Item(data.recipe_data[selected_recipe]["from"][material]))
+            for product in range(len(data.recipe_data[selected_recipe]["to"])):
+                self.player.add_item(Item(data.recipe_data[selected_recipe]["to"][product]))
+        if key_is_just_down(_key_states, pygame.K_c):
+            return "world"
+        return "nothing"
+    def display_world(self, _coordinate: tuple) -> None:
         # display map
         float_x = math.modf(_coordinate[0])[0]
         float_y = math.modf(_coordinate[1])[0]
@@ -565,6 +608,39 @@ class World:
                 slot_image.fill("#8040C080")
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
+    def display_craft(self):
+        # display all the recipes
+        slot_image = pygame.Surface((16 * settings["gui_scale"], 16 * settings["gui_scale"])).convert_alpha()
+        selected_recipe = self.player.state["temporary"]["selected_recipe"]
+        for recipe in range(len(data.recipe_data)):
+            for slot in range(len(data.recipe_data[recipe]["from"])):
+                item_image_unscaled = assets.item_images[data.recipe_data[recipe]["from"][slot]["id"]]
+                item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+                item_image_position = (int(((recipe - selected_recipe) * 16 - 8) * settings["gui_scale"] + settings["window_length"] / 2), int((slot + 1) * 16 * settings["gui_scale"]))
+                if recipe == selected_recipe:
+                    slot_image.fill("#8000FF80")
+                else:
+                    slot_image.fill("#8040C080")
+                screen.blit(slot_image, item_image_position)
+                screen.blit(item_image, item_image_position)
+            item_image_unscaled = assets.item_images[data.recipe_data[recipe]["to"][0]["id"]]
+            item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+            item_image_position = (int(((recipe - selected_recipe) * 16 - 8) * settings["gui_scale"] + settings["window_length"] / 2), 0)
+            if recipe == selected_recipe:
+                slot_image.fill("#8000FF80")
+            else:
+                slot_image.fill("#8040C080")
+            screen.blit(slot_image, item_image_position)
+            screen.blit(item_image, item_image_position)
+        # display the backpack
+        backpack = self.player.state["backpack"]
+        for slot in range(len(backpack)):
+            item_image_unscaled = assets.item_images[backpack[slot].id]
+            item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+            item_image_position = (int((slot * 16 - data.mob_data["player"]["data"]["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2), int(settings["window_height"] - 16 * settings["gui_scale"]))
+            slot_image.fill("#80808080")
+            screen.blit(slot_image, item_image_position)
+            screen.blit(item_image, item_image_position)
 if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
     print_info("Reading World File...")
     file = open(settings["world_directory"], mode="r")
@@ -575,32 +651,47 @@ else:
     world = World({})
 
 
-def display(_coordinate: tuple):
+def display_world(_coordinate: tuple) -> None:
+    window.fill("#80C0FF")
+    screen.fill("#00000000")
+    world.display_world(_coordinate)
+
+
+def display_craft() -> None:
     window.fill("#000000")
     screen.fill("#00000000")
-    world.display(_coordinate)
-    window.blit(screen, (0, 0))
-    pygame.display.flip()
+    world.display_craft()
 
 
-return_value = -1
+return_value = "do_nothing"
 key_states = {}
 mouse_states = {"left": "up", "middle": "up", "right": "up", "scroll_up": 0, "scroll_down": 0}
-while return_value == -1:
+gui = "world"
+while return_value != "quit":
     start_tick_time = time.time()
     events = pygame.event.get()
     key_states = get_key_states(events, key_states)
     mouse_states = get_mouse_states(events, mouse_states)
-    return_value = world.tick(key_states, mouse_states)
-    display((world.player.state["x"], world.player.state["y"]))
+    if gui == "world":
+        return_value = world.tick(key_states, mouse_states)
+        display_world((world.player.state["x"], world.player.state["y"]))
+        if return_value == "craft":
+            gui = "craft"
+    elif gui == "craft":
+        return_value = world.crafts(key_states, mouse_states)
+        display_craft()
+        if return_value == "world":
+            gui = "world"
+    window.blit(screen, (0, 0))
+    pygame.display.flip()
     stop_tick_time = time.time()
     while stop_tick_time - start_tick_time < 0.0625:
         stop_tick_time = time.time()
-pygame.quit()
 if settings["write_world"] == True:
     print_info("Writing World File...")
     file = open(settings["world_directory"], mode="w")
     json.dump(world.set_to_json(), file)
     file.close()
     print_info("Done.")
-sys.exit(return_value)
+pygame.quit()
+sys.exit(0)
