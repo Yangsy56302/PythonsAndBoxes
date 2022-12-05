@@ -145,7 +145,10 @@
             "tile_drop": []
         },
         "state": {},
-        "tag": []
+        "tag": [
+            "mob_transparent",
+            "light_transparent"
+        ]
     },
     "wood": {
         "name": "Wood",
@@ -162,6 +165,25 @@
         },
         "state": {},
         "tag": []
+    },
+    "sapling": {
+        "name": "Sapling",
+        "data": {
+            "mining_tool": "none",
+            "mining_level": 0,
+            "tile_drop": [
+                {
+                    "id": "wooden_stick",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "mob_transparent",
+            "light_transparent"
+        ]
     },
     "coal_ore": {
         "name": "Coal Ore",

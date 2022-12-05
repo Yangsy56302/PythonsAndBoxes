@@ -91,6 +91,18 @@
         "state": {},
         "tag": []
     },
+    "flint_axe": {
+        "name": "Flint Axe",
+        "data": {
+            "max_count": 1,
+            "tool_info": {
+                "type": "axe",
+                "level": 1
+            }
+        },
+        "state": {},
+        "tag": ["tool"]
+    },
     "flint_pickaxe": {
         "name": "Flint Pickaxe",
         "data": {

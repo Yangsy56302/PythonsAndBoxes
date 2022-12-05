@@ -2,6 +2,22 @@
     {
         "from": [
             {
+                "id": "wood",
+                "count": 1,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "wooden_stick",
+                "count": 4,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
                 "id": "flint",
                 "count": 4,
                 "state": {}
@@ -23,15 +39,20 @@
     {
         "from": [
             {
-                "id": "wood",
-                "count": 1,
+                "id": "flint",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "wooden_stick",
+                "count": 4,
                 "state": {}
             }
         ],
         "to": [
             {
-                "id": "wooden_stick",
-                "count": 4,
+                "id": "flint_axe",
+                "count": 1,
                 "state": {}
             }
         ]

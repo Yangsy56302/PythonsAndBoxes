@@ -87,6 +87,7 @@ class Data:
     item_data: dict = None
     mob_data: dict = None
     recipe_data: dict = None
+    structure_data: dict = None
     def load(self) -> None:
         file = open(".\\data\\tiles.json", mode="r")
         self.tile_data = json.load(file)
@@ -99,6 +100,9 @@ class Data:
         file.close()
         file = open(".\\data\\recipes.json", mode="r")
         self.recipe_data = json.load(file)
+        file.close()
+        file = open(".\\data\\structures.json", mode="r")
+        self.structure_data = json.load(file)
         file.close()
     def __init__(self) -> None:
         print_info("Loading Data...")
@@ -154,6 +158,19 @@ class Object:
 
 class Tile(Object):
     pass
+
+
+class Structure(Object):
+    def set_to_json(self) -> dict:
+        return_value = {"id": self.id, "state": {"keys": self.keys, "tiles": self.tiles}}
+        for key in self.keys:
+            return_value["state"]["keys"][key] = self.state["keys"][key].set_to_json()
+        return return_value
+    def get_from_json(self, _json: dict) -> None:
+        self.id = _json["id"]
+        self.state = _json["state"]
+        for key in self.keys:
+            self.state["keys"][key] = Tile(_json["state"]["keys"][key])
 
 
 class Item(Object):
@@ -230,9 +247,7 @@ class Player(Mob):
         self.id = _json["id"]
         self.state = _json["state"]
         for slot_number in range(len(_json["state"]["backpack"])):
-            self.state["backpack"][slot_number] = Item({"id": _json["state"]["backpack"][slot_number]["id"],
-                                                        "count": _json["state"]["backpack"][slot_number]["count"],
-                                                        "state": _json["state"]["backpack"][slot_number]["state"]})
+            self.state["backpack"][slot_number] = Item(_json["state"]["backpack"][slot_number])
 
 
 def get_mouse_states(_events, _states: dict):
@@ -343,8 +358,22 @@ class World:
             for y in range(self.settings["world_height"]):
                 self.map[x].append(Tile(_json["map"][x][y]))
         self.player = Player(_json["player"])
-    def valid_coordinate(self, _coordinate) -> bool:
+    def valid_coordinate(self, _coordinate: tuple) -> bool:
         return _coordinate[0] >= 0 and _coordinate[0] < self.settings["world_length"] and _coordinate[1] >= 0 and _coordinate[1] < self.settings["world_height"]
+    def build_structure(self, _coordinate: tuple, _id: str) -> bool:
+        structure = data.structure_data[_id]
+        length = len(structure["tiles"][0])
+        height = len(structure["tiles"])
+        return_value = False
+        for structure_x in range(length):
+            for structure_y in range(height):
+                map_x = structure_x + _coordinate[0] - structure["core"][0]
+                map_y = height - structure_y - 1 + _coordinate[1] - structure["core"][1]
+                if self.valid_coordinate((map_x, map_y)):
+                    if structure["tiles"][structure_y][structure_x] != " ":
+                        self.map[map_x][map_y] = Tile(structure["keys"][structure["tiles"][structure_y][structure_x]])
+                        return_value = True
+        return return_value
     def noise(self) -> list:
         random.seed(self.settings["seed"])
         terrain = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
@@ -379,9 +408,18 @@ class World:
                     break
                 if terrain[x] - y == 1:
                     self.map[x][y] = Tile({"id": "grassy_soil", "state": {}})
-                    if self.valid_coordinate((x, y + 1)):
-                        random_number = random.choice(range(4))
-                        if random_number == 0:
+                    random_number = random.choice(range(64))
+                    if random_number == 0:
+                        if self.valid_coordinate((x, y + 1)):
+                            self.map[x][y + 1] = Tile({"id": "sapling", "state": {}})
+                    elif random_number == 1:
+                        self.build_structure((x, y), "tree_3")
+                    elif random_number == 2:
+                        self.build_structure((x, y), "tree_4")
+                    elif random_number == 3:
+                        self.build_structure((x, y), "tree_5")
+                    elif random_number <= 16:
+                        if self.valid_coordinate((x, y + 1)):
                             self.map[x][y + 1] = Tile({"id": "grass", "state": {}})
                 elif terrain[x] - y <= dirt_thick:
                     random_number = random.choice(range(16))
@@ -390,7 +428,7 @@ class World:
                     else:
                         self.map[x][y] = Tile({"id": "soil", "state": {}})
                 else:
-                    random_number = random.choice(range(64))
+                    random_number = random.choice(range(256))
                     if random_number == 0:
                         self.map[x][y] = Tile({"id": "coal_ore", "state": {}})
                     elif random_number == 1:
@@ -557,23 +595,32 @@ class World:
             return "craft"
         return "do_nothing"
     def crafts(self, _key_states: dict, _mouse_states: dict) -> str:
+        # is it first time?
         if "selected_recipe" not in self.player.state["temporary"]:
             self.player.state["temporary"]["selected_recipe"] = 0
+        # choose the recipe
         self.player.state["temporary"]["selected_recipe"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
         self.player.state["temporary"]["selected_recipe"] %= len(data.recipe_data)
+        self.player.state["temporary"]["successful_crafting"] = "none"
         selected_recipe = self.player.state["temporary"]["selected_recipe"]
+        # craft
         if key_is_just_down(_key_states, pygame.K_SPACE):
             for material in range(len(data.recipe_data[selected_recipe]["from"])):
                 if self.player.count_item(Item(data.recipe_data[selected_recipe]["from"][material])) < data.recipe_data[selected_recipe]["from"][material]["count"]:
+                    self.player.state["temporary"]["successful_crafting"] = "false"
                     return "nothing"
-            for material in range(len(data.recipe_data[selected_recipe]["from"])):\
+            for material in range(len(data.recipe_data[selected_recipe]["from"])):
                 self.player.subtract_item(Item(data.recipe_data[selected_recipe]["from"][material]))
             for product in range(len(data.recipe_data[selected_recipe]["to"])):
+                self.player.state["temporary"]["successful_crafting"] = "true"
                 self.player.add_item(Item(data.recipe_data[selected_recipe]["to"][product]))
+        # exit
         if key_is_just_down(_key_states, pygame.K_c):
             return "world"
         return "nothing"
     def display_world(self, _coordinate: tuple) -> None:
+        window.fill("#80C0FF")
+        screen.fill("#00000000")
         # display map
         float_x = math.modf(_coordinate[0])[0]
         float_y = math.modf(_coordinate[1])[0]
@@ -609,6 +656,13 @@ class World:
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
     def display_craft(self):
+        if self.player.state["temporary"]["successful_crafting"] == "true":
+            window.fill("#008000")
+        elif self.player.state["temporary"]["successful_crafting"] == "false":
+            window.fill("#800000")
+        else:
+            window.fill("#000000")
+        screen.fill("#00000000")
         # display all the recipes
         slot_image = pygame.Surface((16 * settings["gui_scale"], 16 * settings["gui_scale"])).convert_alpha()
         selected_recipe = self.player.state["temporary"]["selected_recipe"]
@@ -652,14 +706,10 @@ else:
 
 
 def display_world(_coordinate: tuple) -> None:
-    window.fill("#80C0FF")
-    screen.fill("#00000000")
     world.display_world(_coordinate)
 
 
 def display_craft() -> None:
-    window.fill("#000000")
-    screen.fill("#00000000")
     world.display_craft()
 
 
