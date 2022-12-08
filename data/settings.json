@@ -1,7 +1,8 @@
 {
+    "debug": false,
     "window_length": 1024,
     "window_height": 768,
-    "map_scale": 1,
+    "default_map_scale": 1,
     "gui_scale": 2,
     "print_type": ["info", "warning", "error"],
     "read_world": true,

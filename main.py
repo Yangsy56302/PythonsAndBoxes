@@ -7,24 +7,8 @@ import time
 import copy
 
 
-class Error(Exception):
-    info: str = ""
-    def __init__(self, _info: str = "No Info.") -> None:
-        self.info = _info
-    def __str__(self) -> str:
-        return self.info
-
-
-class NameIsNotMainError(Error):
-    def __init__(self) -> None:
-        Error.__init__(self, "The value of __name__ is not \"__main__\".")
-
-
-try:
-    if __name__ != "__main__":
-        raise NameIsNotMainError()
-except NameIsNotMainError as error:
-    print("[ERROR]", str(error))
+if __name__ != "__main__":
+    print("[ERROR] The value of __name__ is not \"__main__\".")
     sys.exit(1)
 
 
@@ -76,9 +60,12 @@ def print_progress_bar(_finished: float, _total: float, _information: str) -> No
 
 pygame.init()
 window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
-pygame.display.set_caption("Pythons&Boxes")
-pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
 window.fill((0, 0, 0))
+if settings["debug"] == True:
+    pygame.display.set_caption("Pythons&Boxes DEBUG_MODE")
+else:
+    pygame.display.set_caption("Pythons&Boxes")
+pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
 screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)
 
 
@@ -86,6 +73,7 @@ class Data:
     tile_data: dict = None
     item_data: dict = None
     mob_data: dict = None
+    font_data: dict = None
     recipe_data: dict = None
     structure_data: dict = None
     def load(self) -> None:
@@ -97,6 +85,9 @@ class Data:
         file.close()
         file = open(".\\data\\mobs.json", mode="r")
         self.mob_data = json.load(file)
+        file.close()
+        file = open(".\\data\\fonts.json", mode="r")
+        self.font_data = json.load(file)
         file.close()
         file = open(".\\data\\recipes.json", mode="r")
         self.recipe_data = json.load(file)
@@ -115,10 +106,12 @@ class Assets:
     tile_images: dict = None
     item_images: dict = None
     mob_images: dict = None
+    font_images: dict = None
     def load(self) -> None:
         self.tile_images = {}
         self.item_images = {}
         self.mob_images = {}
+        self.font_images = {}
         count = 0
         max_count = len(data.tile_data)
         for id in data.tile_data:
@@ -137,6 +130,13 @@ class Assets:
             self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
             count += 1
             print_progress_bar(count, max_count, "Loading Mob Images")
+        count = 0
+        max_count = len(data.font_data)
+        font_image = pygame.image.load(".\\assets\\images\\fonts\\default.png").convert_alpha()
+        for id in data.font_data:
+            self.font_images[id] = font_image.subsurface(((data.font_data[id]["coordinate"][0] * 16, data.font_data[id]["coordinate"][1] * 16), (16, 16)))
+            count += 1
+            print_progress_bar(count, max_count, "Loading Font Images")
     def __init__(self) -> None:
         print_info("Loading Assets...")
         self.load()
@@ -581,9 +581,9 @@ class World:
         if key_is_down(_key_states, pygame.K_d):
             self.player.state["mx"] = data.mob_data["player"]["data"]["speed"]
         if key_is_down(_key_states, pygame.K_BACKQUOTE):
-            settings["map_scale"] = 2
+            settings["map_scale"] = settings["default_map_scale"] * 2
         else:
-            settings["map_scale"] = 1
+            settings["map_scale"] = settings["default_map_scale"]
         if key_is_down(_mouse_states, "left"):
             self.break_tile(self.mouse_to_map(_mouse_states["position"]))
         if key_is_down(_mouse_states, "right"):
@@ -648,13 +648,22 @@ class World:
         for slot in range(len(backpack)):
             item_image_unscaled = assets.item_images[backpack[slot].id]
             item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
-            item_image_position = (int((slot * 16 - data.mob_data["player"]["data"]["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2), int(settings["window_height"] - 16 * settings["gui_scale"]))
+            item_image_position = (int((slot * 16 - data.mob_data["player"]["data"]["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2),
+                                   int(settings["window_height"] - 16 * settings["gui_scale"]))
             if slot == self.player.state["selected_slot"]:
                 slot_image.fill("#8000FF80")
             else:
                 slot_image.fill("#8040C080")
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
+        # display selected item's name
+        item_info = str(self.player.state["backpack"][self.player.state["selected_slot"]].count) + " " + data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["name"].upper()
+        for character_number in range(len(item_info)):
+            character_image_unscaled = assets.font_images[item_info[character_number]]
+            character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+            character_image_position = (int((character_number * 16 - len(item_info) * 8) * settings["gui_scale"] + settings["window_length"] / 2),
+                                        int(settings["window_height"] - 32 * settings["gui_scale"]))
+            screen.blit(character_image, character_image_position)
     def display_craft(self):
         if self.player.state["temporary"]["successful_crafting"] == "true":
             window.fill("#008000")
@@ -670,20 +679,21 @@ class World:
             for slot in range(len(data.recipe_data[recipe]["from"])):
                 item_image_unscaled = assets.item_images[data.recipe_data[recipe]["from"][slot]["id"]]
                 item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
-                item_image_position = (int(((recipe - selected_recipe) * 16 - 8) * settings["gui_scale"] + settings["window_length"] / 2), int((slot + 1) * 16 * settings["gui_scale"]))
+                item_image_position = (int(((recipe - selected_recipe) * 16 - 8) * settings["gui_scale"] + settings["window_length"] / 2),
+                                       int((slot + 1) * 16 * settings["gui_scale"]))
                 if recipe == selected_recipe:
-                    slot_image.fill("#8000FF80")
+                    slot_image.fill("#FF000080")
                 else:
-                    slot_image.fill("#8040C080")
+                    slot_image.fill("#C0404080")
                 screen.blit(slot_image, item_image_position)
                 screen.blit(item_image, item_image_position)
             item_image_unscaled = assets.item_images[data.recipe_data[recipe]["to"][0]["id"]]
             item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
             item_image_position = (int(((recipe - selected_recipe) * 16 - 8) * settings["gui_scale"] + settings["window_length"] / 2), 0)
             if recipe == selected_recipe:
-                slot_image.fill("#8000FF80")
+                slot_image.fill("#00FF0080")
             else:
-                slot_image.fill("#8040C080")
+                slot_image.fill("#40C04080")
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
         # display the backpack
@@ -691,10 +701,19 @@ class World:
         for slot in range(len(backpack)):
             item_image_unscaled = assets.item_images[backpack[slot].id]
             item_image = pygame.transform.scale(item_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
-            item_image_position = (int((slot * 16 - data.mob_data["player"]["data"]["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2), int(settings["window_height"] - 16 * settings["gui_scale"]))
+            item_image_position = (int((slot * 16 - data.mob_data["player"]["data"]["max_slot"] * 8) * settings["gui_scale"] + settings["window_length"] / 2),
+                                   int(settings["window_height"] - 16 * settings["gui_scale"]))
             slot_image.fill("#80808080")
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
+        # display selected recipe's name
+        item_info = str(data.recipe_data[selected_recipe]["to"][0]["count"]) + " " + data.item_data[data.recipe_data[selected_recipe]["to"][0]["id"]]["name"].upper()
+        for character_number in range(len(item_info)):
+            character_image_unscaled = assets.font_images[item_info[character_number]]
+            character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+            character_image_position = (int((character_number * 16 - len(item_info) * 8) * settings["gui_scale"] + settings["window_length"] / 2),
+                                        int(settings["window_height"] - 32 * settings["gui_scale"]))
+            screen.blit(character_image, character_image_position)
 if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
     print_info("Reading World File...")
     file = open(settings["world_directory"], mode="r")
