@@ -22,10 +22,14 @@
     "rock": {
         "name": "Rock",
         "data": {
-            "max_count": 256
+            "max_count": 256,
+            "to_tile": {
+                "id": "rock",
+                "state": {}
+            }
         },
         "state": {},
-        "tag": []
+        "tag": ["placeable"]
     },
     "dirt": {
         "name": "Dirt",
@@ -69,6 +73,22 @@
     },
     "coal": {
         "name": "Coal",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "copper_ore": {
+        "name": "Copper Ore",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "silver_ore": {
+        "name": "Silver Ore",
         "data": {
             "max_count": 256
         },

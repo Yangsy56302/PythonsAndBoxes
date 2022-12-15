@@ -29,5 +29,18 @@
             ]
         },
         "tag": []
+    },
+    "test_mob": {
+        "name": "Test Mob",
+        "data": {
+            "max_health": 64,
+            "speed": 0.25,
+            "actions": ["no_action", "left", "right", "jump"]
+        },
+        "state": {
+            "temporary": {},
+            "action": "no_action"
+        },
+        "tag": []
     }
 }

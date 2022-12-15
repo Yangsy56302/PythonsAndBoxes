@@ -51,7 +51,7 @@ def progress_bar(_finished: float, _total: float) -> str:
     finished = float(_finished)
     total = float(_total)
     percentage = finished / total
-    return "{:>7.2%} |{:.<100}|".format(percentage, "#" * int(percentage * 100))
+    return "{:>7.2%} [{:.<100}]".format(percentage, "#" * int(percentage * 100))
 
 
 def print_progress_bar(_finished: float, _total: float, _information: str) -> None:
@@ -343,13 +343,17 @@ class World:
     settings: dict = None
     map: list = None
     player: Player = None
+    mobs: list = None
     def set_to_json(self) -> dict:
         json_map = []
         for x in range(self.settings["world_length"]):
             json_map.append([])
             for y in range(self.settings["world_height"]):
                 json_map[x].append(self.map[x][y].set_to_json())
-        return {"map": json_map, "player": self.player.set_to_json(), "settings": self.settings}
+        json_mobs = []
+        for mob_number in range(len(self.mobs)):
+            json_mobs.append(self.mobs[mob_number].set_to_json())
+        return {"map": json_map, "player": self.player.set_to_json(), "mobs": json_mobs, "settings": self.settings}
     def get_from_json(self, _json: dict) -> None:
         self.settings = _json["settings"]
         self.map = []
@@ -358,6 +362,8 @@ class World:
             for y in range(self.settings["world_height"]):
                 self.map[x].append(Tile(_json["map"][x][y]))
         self.player = Player(_json["player"])
+        for mob_number in range(len(_json.mobs)):
+            self.mobs.append(Mob(_json["mobs"][mob_number]))
     def valid_coordinate(self, _coordinate: tuple) -> bool:
         return _coordinate[0] >= 0 and _coordinate[0] < self.settings["world_length"] and _coordinate[1] >= 0 and _coordinate[1] < self.settings["world_height"]
     def build_structure(self, _coordinate: tuple, _id: str) -> bool:
@@ -396,6 +402,18 @@ class World:
         for x in range(self.settings["world_length"]):
             terrain[x] = int(terrain[x])
         return terrain
+    def cave(self, _coordinate: tuple, _length: int) -> list:
+        return_value = []
+        angle = random.random()
+        angle_offset = (random.random() - 0.5) / 64
+        coordinate = list(_coordinate)
+        for step in range(_length):
+            angle_offset += (random.random() - 0.5) / 64
+            angle += angle_offset
+            angle %= 1
+            coordinate = (coordinate[0] + math.cos(angle * 2 * math.pi), coordinate[1] + math.sin(angle * 2 * math.pi))
+            return_value.append(copy.deepcopy(coordinate))
+        return return_value
     def create(self, _settings: dict) -> None:
         self.settings = _settings
         self.map = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
@@ -428,18 +446,36 @@ class World:
                     else:
                         self.map[x][y] = Tile({"id": "soil", "state": {}})
                 else:
-                    random_number = random.choice(range(256))
+                    random_number = random.choice(range(int((y + self.settings["world_height"]) / 2)))
                     if random_number == 0:
                         self.map[x][y] = Tile({"id": "coal_ore", "state": {}})
                     elif random_number == 1:
+                        self.map[x][y] = Tile({"id": "copper_ore", "state": {}})
+                    elif random_number == 2:
+                        self.map[x][y] = Tile({"id": "silver_ore", "state": {}})
+                    elif random_number == 3:
                         self.map[x][y] = Tile({"id": "iron_ore", "state": {}})
                     else:
                         self.map[x][y] = Tile({"id": "stone", "state": {}})
-        self.player = Player({"id": "player", "state": data.mob_data["player"]["state"]})
-        self.player.state["x"] = float(int(self.settings["world_length"] / 2))
+        for i in range(int(self.settings["world_length"] / 4)):
+            cave_line = self.cave((random.choice(range(self.settings["world_length"])), random.choice(range(self.settings["world_height"]))), random.choice(range(16, 64)))
+            for coordinate in range(len(cave_line)):
+                for mx in range(-2, 3):
+                    for my in range(-2, 3):
+                        if self.valid_coordinate((cave_line[coordinate][0] + mx, cave_line[coordinate][1] + my)):
+                            self.map[int(cave_line[coordinate][0] + mx)][int(cave_line[coordinate][1] + my)] = Tile({"id": "air", "state": {}})
+        self.player = Player({"id": "player", "state": copy.deepcopy(data.mob_data["player"]["state"])})
+        self.player.state["x"] = self.settings["world_length"] / 2
         self.player.state["y"] = float(terrain[int(self.settings["world_length"] / 2)])
         self.player.state["mx"] = 0.0
         self.player.state["my"] = 0.0
+        self.mobs = []
+        for mob_number in range(int(self.settings["world_length"] / 16)):
+            self.mobs.append(Mob({"id": "test_mob", "state": copy.deepcopy(data.mob_data["test_mob"]["state"])}))
+            self.mobs[mob_number].state["x"] = random.choice(range(self.settings["world_length"]))
+            self.mobs[mob_number].state["y"] = float(terrain[int(self.mobs[mob_number].state["x"])])
+            self.mobs[mob_number].state["mx"] = 0.0
+            self.mobs[mob_number].state["my"] = 0.0
         print_progress_bar(1, 1, "Creating New World")
         print_info("Done.")
     def __init__(self, _json: dict) -> None:
@@ -456,10 +492,10 @@ class World:
                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                     return True
         return False
-    def move(self, _mob) -> Mob:
-        if _mob.state["mx"] == 0 and _mob.state["my"] == 0: # moving?
-            return _mob
-        # get player's coordinate
+    def move(self, _mob) -> tuple:
+        if _mob.state["mx"] == 0 and _mob.state["my"] == 0:
+            return (_mob.state["x"], _mob.state["y"], 0.0, 0.0)
+        # get _mob's coordinate
         max_move = int(max(abs(_mob.state["mx"]), abs(_mob.state["my"])) * 16)
         list_x = [0 for x in range(max_move + 1)]
         if _mob.state["mx"] != 0: # avoid mx / 0
@@ -467,7 +503,7 @@ class World:
         list_y = [0 for y in range(max_move + 1)]
         if _mob.state["my"] != 0: # avoid my / 0
             list_y = [int(y * _mob.state["my"] * 16 / max_move) / 16 for y in range(max_move + 1)]
-        # test the touch between player and tile
+        # test the touch between _mob and tile
         for i in range(max_move + 1):
             # get tile's coordinate
             tile_coordinate = [[int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.03125)],
@@ -476,12 +512,9 @@ class World:
                                [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
             for j in range(len(tile_coordinate)):
                 if not self.valid_coordinate(tile_coordinate[j]):
-                    _mob.state["x"] = float(int(self.settings["world_length"] / 2))
-                    _mob.state["y"] = 250.0
-                    _mob.state["mx"] = 0.0
-                    _mob.state["my"] = 0.0
-                    return _mob
+                    return (self.settings["world_length"] / 2, self.settings["world_height"] - 1.0, 0.0, 0.0)
                 # collapse
+                return_value = [_mob.state["x"], _mob.state["y"], _mob.state["mx"], _mob.state["my"]]
                 if "mob_transparent" not in data.tile_data[self.map[tile_coordinate[j][0]][tile_coordinate[j][1]].id]["tag"]:
                     if _mob.state["mx"] > 0:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
@@ -489,34 +522,38 @@ class World:
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
-                                    _mob.state["mx"] = 0.0
+                                    return_value[2] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
-                                    _mob.state["mx"] = 0.0
+                                    return_value[2] = 0.0
                     if _mob.state["my"] > 0:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] + 1.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] + 1.03125)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
-                                    _mob.state["my"] = 0.0
+                                    return_value[3] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] - 0.03125)],
                                            [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] - 0.03125)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
-                                    _mob.state["my"] = 0.0
-                    _mob.state["x"] += list_x[i - 1]
-                    _mob.state["y"] += list_y[i - 1]
-                    return _mob
-        _mob.state["x"] += list_x[-1]
-        _mob.state["y"] += list_y[-1]
-        return _mob
+                                    return_value[3] = 0.0
+                    return_value[0] = _mob.state["x"] + list_x[i - 1]
+                    return_value[1] = _mob.state["y"] + list_y[i - 1]
+                    return tuple(return_value)
+        return_value[0] = _mob.state["x"] + list_x[-1]
+        return_value[1] = _mob.state["y"] + list_y[-1]
+        return tuple(return_value)
+    def mouse_to_map(self, _mouse_position: tuple) -> tuple:
+        x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) * -1 + 0.5 + self.player.state["x"]
+        y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + self.player.state["y"]
+        return (x_coordinate, y_coordinate)
     def break_tile(self, _coordinate: tuple) -> bool:
         # is this coordinate valid?
         if not self.valid_coordinate(_coordinate):
@@ -564,33 +601,63 @@ class World:
         # set tile
         self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile(data.item_data[current_item.id]["data"]["to_tile"])
         return True
-    def mouse_to_map(self, _mouse_position: tuple) -> tuple:
-        x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) * -1 + 0.5 + self.player.state["x"]
-        y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + self.player.state["y"]
-        return (x_coordinate, y_coordinate)
     def tick(self, _key_states: dict, _mouse_states: dict) -> str:
+        # quit game
         if key_is_just_down(_key_states, pygame.K_DELETE):
             return "quit"
-        self.player.state["mx"] = 0.0
-        self.player.state["my"] += self.settings["gravity"]
-        if key_is_down(_key_states, pygame.K_SPACE):
-            if self.mob_on_ground(self.player):
-                self.player.state["my"] += 0.75
+        # jump test
+        if self.mob_on_ground(self.player):
+            if key_is_down(_key_states, pygame.K_SPACE):
+                self.player.state["my"] = 0.75
+            else:
+                self.player.state["my"] = 0.0
+        else:
+            self.player.state["my"] += self.settings["gravity"]
+        # move left/right
         if key_is_down(_key_states, pygame.K_a):
             self.player.state["mx"] = -data.mob_data["player"]["data"]["speed"]
         if key_is_down(_key_states, pygame.K_d):
             self.player.state["mx"] = data.mob_data["player"]["data"]["speed"]
+        # zoom
         if key_is_down(_key_states, pygame.K_BACKQUOTE):
             settings["map_scale"] = settings["default_map_scale"] * 2
         else:
             settings["map_scale"] = settings["default_map_scale"]
+        # break/place tile
         if key_is_down(_mouse_states, "left"):
             self.break_tile(self.mouse_to_map(_mouse_states["position"]))
         if key_is_down(_mouse_states, "right"):
             self.place_tile(self.mouse_to_map(_mouse_states["position"]))
+        # select backpack
         self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
         self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
-        self.player = self.move(self.player)
+        # move player
+        coordinate = self.move(self.player)
+        self.player.state["x"] = coordinate[0]
+        self.player.state["y"] = coordinate[1]
+        self.player.state["mx"] = coordinate[2]
+        self.player.state["my"] = coordinate[3]
+        for mob_number in range(len(self.mobs)):
+            if random.choice(range(16)) == 0:
+                self.mobs[mob_number].state["action"] = random.choice(data.mob_data[self.mobs[mob_number].id]["data"]["actions"])
+            if self.mob_on_ground(self.mobs[mob_number]):
+                if self.mobs[mob_number].state["action"] == "jump":
+                    self.mobs[mob_number].state["my"] = 0.75
+                else:
+                    self.mobs[mob_number].state["my"] = 0.0
+            else:
+                self.mobs[mob_number].state["my"] += self.settings["gravity"]
+            if self.mobs[mob_number].state["action"] == "left":
+                self.mobs[mob_number].state["mx"] = -data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
+            elif self.mobs[mob_number].state["action"] == "right":
+                self.mobs[mob_number].state["mx"] = data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
+            else:
+                self.mobs[mob_number].state["mx"] = 0
+            coordinate = self.move(self.mobs[mob_number])
+            self.mobs[mob_number].state["x"] = coordinate[0]
+            self.mobs[mob_number].state["y"] = coordinate[1]
+            self.mobs[mob_number].state["mx"] = coordinate[2]
+            self.mobs[mob_number].state["my"] = coordinate[3]
         if key_is_just_down(_key_states, pygame.K_c):
             return "craft"
         return "do_nothing"
@@ -638,10 +705,21 @@ class World:
                 tile_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
                                        (int((offset_y - float_y) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
                 screen.blit(tile_image, tile_image_position)
-        # display the player in the middle
+        # display mobs
+        for mob_number in range(len(self.mobs)):
+            mob_image_unscaled = assets.mob_images[self.mobs[mob_number].id]
+            mob_image = pygame.transform.scale(mob_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
+            mob_image_position = (int(((self.mobs[mob_number].state["x"] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
+                                  int(((self.mobs[mob_number].state["y"] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
+            if mob_image_position[0] > -16 * settings["map_scale"] and mob_image_position[0] < settings["window_length"]:
+                if mob_image_position[1] > -16 * settings["map_scale"] and mob_image_position[1] < settings["window_height"]:
+                    screen.blit(mob_image, mob_image_position)
+        # display player
         player_image_unscaled = assets.mob_images["player"]
         player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
-        screen.blit(player_image, ((settings["window_length"] - 16 * settings["map_scale"]) / 2, (settings["window_height"] - 16 * settings["map_scale"]) / 2))
+        player_image_position = (int(((self.player.state["x"] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
+                                 int(((self.player.state["y"] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
+        screen.blit(player_image, player_image_position)
         # display the backpack
         backpack = self.player.state["backpack"]
         slot_image = pygame.Surface((16 * settings["gui_scale"], 16 * settings["gui_scale"])).convert_alpha()
@@ -724,14 +802,6 @@ else:
     world = World({})
 
 
-def display_world(_coordinate: tuple) -> None:
-    world.display_world(_coordinate)
-
-
-def display_craft() -> None:
-    world.display_craft()
-
-
 return_value = "do_nothing"
 key_states = {}
 mouse_states = {"left": "up", "middle": "up", "right": "up", "scroll_up": 0, "scroll_down": 0}
@@ -743,12 +813,12 @@ while return_value != "quit":
     mouse_states = get_mouse_states(events, mouse_states)
     if gui == "world":
         return_value = world.tick(key_states, mouse_states)
-        display_world((world.player.state["x"], world.player.state["y"]))
+        world.display_world((world.player.state["x"], world.player.state["y"]))
         if return_value == "craft":
             gui = "craft"
     elif gui == "craft":
         return_value = world.crafts(key_states, mouse_states)
-        display_craft()
+        world.display_craft()
         if return_value == "world":
             gui = "world"
     window.blit(screen, (0, 0))

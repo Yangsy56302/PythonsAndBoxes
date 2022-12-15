@@ -5,8 +5,8 @@
     "default_map_scale": 1,
     "gui_scale": 2,
     "print_type": ["info", "warning", "error"],
-    "read_world": true,
-    "write_world": true,
+    "read_world": false,
+    "write_world": false,
     "world_directory": ".\\world\\world.json",
     "default_world_settings": {
         "seed": 0,

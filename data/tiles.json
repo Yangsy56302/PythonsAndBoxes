@@ -46,6 +46,22 @@
         "state": {},
         "tag": ["stone"]
     },
+    "rock": {
+        "name": "Rock",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": ["stone"]
+    },
     "soil": {
         "name": "Soil",
         "data": {
@@ -198,6 +214,54 @@
                 },
                 {
                     "id": "coal",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "stone",
+            "ore"
+        ]
+    },
+    "copper_ore": {
+        "name": "Copper Ore",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
+                },
+                {
+                    "id": "copper_ore",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "stone",
+            "ore"
+        ]
+    },
+    "silver_ore": {
+        "name": "Silver Ore",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
+                },
+                {
+                    "id": "silver_ore",
                     "count": 1,
                     "state": {}
                 }
