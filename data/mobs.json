@@ -3,8 +3,8 @@
         "name": "Player",
         "data": {
             "max_health": 256,
-            "max_slot": 16,
-            "speed": 0.25
+            "speed": 0.25,
+            "max_slot": 16
         },
         "state": {
             "temporary": {},
@@ -28,19 +28,43 @@
                 {"id": "empty", "count": 0, "state": {}}
             ]
         },
-        "tag": []
+        "tag": ["player"]
     },
     "test_mob": {
         "name": "Test Mob",
         "data": {
+            "max_health": 16,
+            "speed": 0.5
+        },
+        "state": {
+            "temporary": {}
+        },
+        "tag": []
+    },
+    "sheep": {
+        "name": "Fluffy Sheep",
+        "data": {
             "max_health": 64,
-            "speed": 0.25,
+            "speed": 0.125,
             "actions": ["no_action", "left", "right", "jump"]
         },
         "state": {
             "temporary": {},
             "action": "no_action"
         },
-        "tag": []
+        "tag": ["animal"]
+    },
+    "pig": {
+        "name": "Delicious Pig",
+        "data": {
+            "max_health": 64,
+            "speed": 0.125,
+            "actions": ["no_action", "left", "right", "jump"]
+        },
+        "state": {
+            "temporary": {},
+            "action": "no_action"
+        },
+        "tag": ["animal"]
     }
 }

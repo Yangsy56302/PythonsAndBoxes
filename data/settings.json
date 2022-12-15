@@ -12,6 +12,7 @@
         "seed": 0,
         "world_length": 4096,
         "world_height": 256,
-        "gravity": -0.0625
+        "gravity": -0.0625,
+        "jump_speed": 0.5
     }
 }

@@ -407,7 +407,7 @@ class World:
         angle = random.random()
         angle_offset = (random.random() - 0.5) / 64
         coordinate = list(_coordinate)
-        for step in range(_length):
+        for i in range(_length):
             angle_offset += (random.random() - 0.5) / 64
             angle += angle_offset
             angle %= 1
@@ -465,17 +465,19 @@ class World:
                         if self.valid_coordinate((cave_line[coordinate][0] + mx, cave_line[coordinate][1] + my)):
                             self.map[int(cave_line[coordinate][0] + mx)][int(cave_line[coordinate][1] + my)] = Tile({"id": "air", "state": {}})
         self.player = Player({"id": "player", "state": copy.deepcopy(data.mob_data["player"]["state"])})
-        self.player.state["x"] = self.settings["world_length"] / 2
-        self.player.state["y"] = float(terrain[int(self.settings["world_length"] / 2)])
-        self.player.state["mx"] = 0.0
-        self.player.state["my"] = 0.0
+        self.player.state["coordinate"] = [self.settings["world_length"] / 2, float(terrain[int(self.settings["world_length"] / 2)])]
+        self.player.state["movement"] = [0.0, 0.0]
         self.mobs = []
+        animal_ids = []
+        for mob in data.mob_data:
+            if "animal" in data.mob_data[mob]["tag"]:
+                animal_ids.append(mob)
         for mob_number in range(int(self.settings["world_length"] / 16)):
-            self.mobs.append(Mob({"id": "test_mob", "state": copy.deepcopy(data.mob_data["test_mob"]["state"])}))
-            self.mobs[mob_number].state["x"] = random.choice(range(self.settings["world_length"]))
-            self.mobs[mob_number].state["y"] = float(terrain[int(self.mobs[mob_number].state["x"])])
-            self.mobs[mob_number].state["mx"] = 0.0
-            self.mobs[mob_number].state["my"] = 0.0
+            random_animal_id = random.choice(animal_ids)
+            self.mobs.append(Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])}))
+            random_x = random.choice(range(self.settings["world_length"]))
+            self.mobs[mob_number].state["coordinate"] = [float(random_x), float(terrain[int(random_x)])]
+            self.mobs[mob_number].state["movement"] = [0.0, 0.0]
         print_progress_bar(1, 1, "Creating New World")
         print_info("Done.")
     def __init__(self, _json: dict) -> None:
@@ -485,74 +487,74 @@ class World:
             self.get_from_json(_json)
     def mob_on_ground(self, _mob) -> bool:
         # get tile's coordinate
-        tile_coordinate = [[int(_mob.state["x"] + 0.03125), int(_mob.state["y"] - 0.03125)],
-                           [int(_mob.state["x"] + 0.96875), int(_mob.state["y"] - 0.03125)]]
+        tile_coordinate = [[int(_mob.state["coordinate"][0] + 0.03125), int(_mob.state["coordinate"][1] - 0.03125)],
+                           [int(_mob.state["coordinate"][0] + 0.96875), int(_mob.state["coordinate"][1] - 0.03125)]]
         for coordinate in tile_coordinate:
             if self.valid_coordinate(coordinate):
                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                     return True
         return False
     def move(self, _mob) -> tuple:
-        if _mob.state["mx"] == 0 and _mob.state["my"] == 0:
-            return (_mob.state["x"], _mob.state["y"], 0.0, 0.0)
+        if _mob.state["movement"][0] == 0 and _mob.state["movement"][1] == 0:
+            return (_mob.state["coordinate"][0], _mob.state["coordinate"][1], 0.0, 0.0)
         # get _mob's coordinate
-        max_move = int(max(abs(_mob.state["mx"]), abs(_mob.state["my"])) * 16)
+        max_move = int(max(abs(_mob.state["movement"][0]), abs(_mob.state["movement"][1])) * 16)
         list_x = [0 for x in range(max_move + 1)]
-        if _mob.state["mx"] != 0: # avoid mx / 0
-            list_x = [int(x * _mob.state["mx"] * 16 / max_move) / 16 for x in range(max_move + 1)]
+        if _mob.state["movement"][0] != 0: # avoid mx / 0
+            list_x = [int(x * _mob.state["movement"][0] * 16 / max_move) / 16 for x in range(max_move + 1)]
         list_y = [0 for y in range(max_move + 1)]
-        if _mob.state["my"] != 0: # avoid my / 0
-            list_y = [int(y * _mob.state["my"] * 16 / max_move) / 16 for y in range(max_move + 1)]
+        if _mob.state["movement"][1] != 0: # avoid my / 0
+            list_y = [int(y * _mob.state["movement"][1] * 16 / max_move) / 16 for y in range(max_move + 1)]
         # test the touch between _mob and tile
         for i in range(max_move + 1):
             # get tile's coordinate
-            tile_coordinate = [[int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.03125)],
-                               [int(_mob.state["x"] + list_x[i] + 0.03125), int(_mob.state["y"] + list_y[i] + 0.96875)],
-                               [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.03125)],
-                               [int(_mob.state["x"] + list_x[i] + 0.96875), int(_mob.state["y"] + list_y[i] + 0.96875)]]
+            tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i] + 0.03125), int(_mob.state["coordinate"][1] + list_y[i] + 0.03125)],
+                               [int(_mob.state["coordinate"][0] + list_x[i] + 0.03125), int(_mob.state["coordinate"][1] + list_y[i] + 0.96875)],
+                               [int(_mob.state["coordinate"][0] + list_x[i] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i] + 0.03125)],
+                               [int(_mob.state["coordinate"][0] + list_x[i] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i] + 0.96875)]]
             for j in range(len(tile_coordinate)):
                 if not self.valid_coordinate(tile_coordinate[j]):
                     return (self.settings["world_length"] / 2, self.settings["world_height"] - 1.0, 0.0, 0.0)
                 # collapse
-                return_value = [_mob.state["x"], _mob.state["y"], _mob.state["mx"], _mob.state["my"]]
+                return_value = [_mob.state["coordinate"][0], _mob.state["coordinate"][1], _mob.state["movement"][0], _mob.state["movement"][1]]
                 if "mob_transparent" not in data.tile_data[self.map[tile_coordinate[j][0]][tile_coordinate[j][1]].id]["tag"]:
-                    if _mob.state["mx"] > 0:
-                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
-                                           [int(_mob.state["x"] + list_x[i - 1] + 1.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
+                    if _mob.state["movement"][0] > 0:
+                        tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] + 1.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.03125)],
+                                           [int(_mob.state["coordinate"][0] + list_x[i - 1] + 1.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[2] = 0.0
                     else:
-                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.03125)],
-                                           [int(_mob.state["x"] + list_x[i - 1] - 0.03125), int(_mob.state["y"] + list_y[i - 1] + 0.96875)]]
+                        tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] - 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.03125)],
+                                           [int(_mob.state["coordinate"][0] + list_x[i - 1] - 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[2] = 0.0
-                    if _mob.state["my"] > 0:
-                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] + 1.03125)],
-                                           [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] + 1.03125)]]
+                    if _mob.state["movement"][1] > 0:
+                        tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 1.03125)],
+                                           [int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i - 1] + 1.03125)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[3] = 0.0
                     else:
-                        tile_coordinate = [[int(_mob.state["x"] + list_x[i - 1] + 0.03125), int(_mob.state["y"] + list_y[i - 1] - 0.03125)],
-                                           [int(_mob.state["x"] + list_x[i - 1] + 0.96875), int(_mob.state["y"] + list_y[i - 1] - 0.03125)]]
+                        tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] - 0.03125)],
+                                           [int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i - 1] - 0.03125)]]
                         for coordinate in tile_coordinate:
                             if self.valid_coordinate(coordinate):
                                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[3] = 0.0
-                    return_value[0] = _mob.state["x"] + list_x[i - 1]
-                    return_value[1] = _mob.state["y"] + list_y[i - 1]
+                    return_value[0] = _mob.state["coordinate"][0] + list_x[i - 1]
+                    return_value[1] = _mob.state["coordinate"][1] + list_y[i - 1]
                     return tuple(return_value)
-        return_value[0] = _mob.state["x"] + list_x[-1]
-        return_value[1] = _mob.state["y"] + list_y[-1]
+        return_value[0] = _mob.state["coordinate"][0] + list_x[-1]
+        return_value[1] = _mob.state["coordinate"][1] + list_y[-1]
         return tuple(return_value)
-    def mouse_to_map(self, _mouse_position: tuple) -> tuple:
-        x_coordinate = ((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) * -1 + 0.5 + self.player.state["x"]
-        y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + self.player.state["y"]
+    def mouse_to_map(self, _mouse_position: tuple, _world_coordinate: tuple) -> tuple:
+        x_coordinate = -((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) + 0.5 + _world_coordinate[0]
+        y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + _world_coordinate[1]
         return (x_coordinate, y_coordinate)
     def break_tile(self, _coordinate: tuple) -> bool:
         # is this coordinate valid?
@@ -608,56 +610,63 @@ class World:
         # jump test
         if self.mob_on_ground(self.player):
             if key_is_down(_key_states, pygame.K_SPACE):
-                self.player.state["my"] = 0.75
+                self.player.state["movement"][1] = self.settings["jump_speed"]
             else:
-                self.player.state["my"] = 0.0
+                self.player.state["movement"][1] = 0.0
         else:
-            self.player.state["my"] += self.settings["gravity"]
+            self.player.state["movement"][1] += self.settings["gravity"]
         # move left/right
+        self.player.state["movement"][0] = 0.0
         if key_is_down(_key_states, pygame.K_a):
-            self.player.state["mx"] = -data.mob_data["player"]["data"]["speed"]
+            self.player.state["movement"][0] = -data.mob_data["player"]["data"]["speed"]
         if key_is_down(_key_states, pygame.K_d):
-            self.player.state["mx"] = data.mob_data["player"]["data"]["speed"]
+            self.player.state["movement"][0] = data.mob_data["player"]["data"]["speed"]
         # zoom
         if key_is_down(_key_states, pygame.K_BACKQUOTE):
             settings["map_scale"] = settings["default_map_scale"] * 2
         else:
             settings["map_scale"] = settings["default_map_scale"]
         # break/place tile
+        mouse_in_map = self.mouse_to_map(_mouse_states["position"], tuple(self.player.state["coordinate"]))
         if key_is_down(_mouse_states, "left"):
-            self.break_tile(self.mouse_to_map(_mouse_states["position"]))
+            self.break_tile(mouse_in_map)
         if key_is_down(_mouse_states, "right"):
-            self.place_tile(self.mouse_to_map(_mouse_states["position"]))
+            self.place_tile(mouse_in_map)
+        # attack
+        if key_is_just_down(_mouse_states, "left"):
+            for mob_number in range(len(self.mobs)):
+                if abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5 and abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5:
+                    self.mobs[mob_number].state["health"] -= 1
         # select backpack
         self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
         self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
         # move player
         coordinate = self.move(self.player)
-        self.player.state["x"] = coordinate[0]
-        self.player.state["y"] = coordinate[1]
-        self.player.state["mx"] = coordinate[2]
-        self.player.state["my"] = coordinate[3]
+        self.player.state["coordinate"][0] = coordinate[0]
+        self.player.state["coordinate"][1] = coordinate[1]
+        self.player.state["movement"][0] = coordinate[2]
+        self.player.state["movement"][1] = coordinate[3]
         for mob_number in range(len(self.mobs)):
             if random.choice(range(16)) == 0:
                 self.mobs[mob_number].state["action"] = random.choice(data.mob_data[self.mobs[mob_number].id]["data"]["actions"])
             if self.mob_on_ground(self.mobs[mob_number]):
                 if self.mobs[mob_number].state["action"] == "jump":
-                    self.mobs[mob_number].state["my"] = 0.75
+                    self.mobs[mob_number].state["movement"][1] = self.settings["jump_speed"]
                 else:
-                    self.mobs[mob_number].state["my"] = 0.0
+                    self.mobs[mob_number].state["movement"][1] = 0.0
             else:
-                self.mobs[mob_number].state["my"] += self.settings["gravity"]
+                self.mobs[mob_number].state["movement"][1] += self.settings["gravity"]
             if self.mobs[mob_number].state["action"] == "left":
-                self.mobs[mob_number].state["mx"] = -data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
+                self.mobs[mob_number].state["movement"][0] = -data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
             elif self.mobs[mob_number].state["action"] == "right":
-                self.mobs[mob_number].state["mx"] = data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
+                self.mobs[mob_number].state["movement"][0] = data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
             else:
-                self.mobs[mob_number].state["mx"] = 0
+                self.mobs[mob_number].state["movement"][0] = 0.0
             coordinate = self.move(self.mobs[mob_number])
-            self.mobs[mob_number].state["x"] = coordinate[0]
-            self.mobs[mob_number].state["y"] = coordinate[1]
-            self.mobs[mob_number].state["mx"] = coordinate[2]
-            self.mobs[mob_number].state["my"] = coordinate[3]
+            self.mobs[mob_number].state["coordinate"][0] = coordinate[0]
+            self.mobs[mob_number].state["coordinate"][1] = coordinate[1]
+            self.mobs[mob_number].state["movement"][0] = coordinate[2]
+            self.mobs[mob_number].state["movement"][1] = coordinate[3]
         if key_is_just_down(_key_states, pygame.K_c):
             return "craft"
         return "do_nothing"
@@ -709,16 +718,16 @@ class World:
         for mob_number in range(len(self.mobs)):
             mob_image_unscaled = assets.mob_images[self.mobs[mob_number].id]
             mob_image = pygame.transform.scale(mob_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
-            mob_image_position = (int(((self.mobs[mob_number].state["x"] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
-                                  int(((self.mobs[mob_number].state["y"] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
+            mob_image_position = (int(((self.mobs[mob_number].state["coordinate"][0] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
+                                  int(((self.mobs[mob_number].state["coordinate"][1] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
             if mob_image_position[0] > -16 * settings["map_scale"] and mob_image_position[0] < settings["window_length"]:
                 if mob_image_position[1] > -16 * settings["map_scale"] and mob_image_position[1] < settings["window_height"]:
                     screen.blit(mob_image, mob_image_position)
         # display player
         player_image_unscaled = assets.mob_images["player"]
         player_image = pygame.transform.scale(player_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
-        player_image_position = (int(((self.player.state["x"] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
-                                 int(((self.player.state["y"] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
+        player_image_position = (int(((self.player.state["coordinate"][0] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
+                                 int(((self.player.state["coordinate"][1] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
         screen.blit(player_image, player_image_position)
         # display the backpack
         backpack = self.player.state["backpack"]
@@ -804,7 +813,7 @@ else:
 
 return_value = "do_nothing"
 key_states = {}
-mouse_states = {"left": "up", "middle": "up", "right": "up", "scroll_up": 0, "scroll_down": 0}
+mouse_states = {"position": (0, 0), "movement": (0, 0), "left": "up", "middle": "up", "right": "up", "scroll_up": 0, "scroll_down": 0}
 gui = "world"
 while return_value != "quit":
     start_tick_time = time.time()
@@ -813,7 +822,7 @@ while return_value != "quit":
     mouse_states = get_mouse_states(events, mouse_states)
     if gui == "world":
         return_value = world.tick(key_states, mouse_states)
-        world.display_world((world.player.state["x"], world.player.state["y"]))
+        world.display_world((world.player.state["coordinate"][0], world.player.state["coordinate"][1]))
         if return_value == "craft":
             gui = "craft"
     elif gui == "craft":
