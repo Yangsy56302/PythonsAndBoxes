@@ -388,6 +388,7 @@ class World:
         step_count = 0
         offset_1 = random.uniform(step_length * -0.25, step_length * 0.25)
         offset_2 = random.uniform(step_length * -0.25, step_length * 0.25)
+        # generate height map
         while step_length <= 2 ** 6:
             for x in range(self.settings["world_length"]):
                 step_count += 1
@@ -403,6 +404,7 @@ class World:
             terrain[x] = int(terrain[x])
         return terrain
     def cave(self, _coordinate: tuple, _length: int) -> list:
+        # generate cave
         return_value = []
         angle = random.random()
         angle_offset = (random.random() - 0.5) / 64
@@ -415,6 +417,7 @@ class World:
             return_value.append(copy.deepcopy(coordinate))
         return return_value
     def create(self, _settings: dict) -> None:
+        # create new world
         self.settings = _settings
         self.map = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
         terrain = self.noise()
@@ -455,6 +458,8 @@ class World:
                         self.map[x][y] = Tile({"id": "silver_ore", "state": {}})
                     elif random_number == 3:
                         self.map[x][y] = Tile({"id": "iron_ore", "state": {}})
+                    elif random_number == 4:
+                        self.map[x][y] = Tile({"id": "gold_ore", "state": {}})
                     else:
                         self.map[x][y] = Tile({"id": "stone", "state": {}})
         for i in range(int(self.settings["world_length"] / 4)):
@@ -465,17 +470,19 @@ class World:
                         if self.valid_coordinate((cave_line[coordinate][0] + mx, cave_line[coordinate][1] + my)):
                             self.map[int(cave_line[coordinate][0] + mx)][int(cave_line[coordinate][1] + my)] = Tile({"id": "air", "state": {}})
         self.player = Player({"id": "player", "state": copy.deepcopy(data.mob_data["player"]["state"])})
+        self.player.state["health"] = data.mob_data["player"]["data"]["max_health"]
         self.player.state["coordinate"] = [self.settings["world_length"] / 2, float(terrain[int(self.settings["world_length"] / 2)])]
         self.player.state["movement"] = [0.0, 0.0]
         self.mobs = []
         animal_ids = []
-        for mob in data.mob_data:
-            if "animal" in data.mob_data[mob]["tag"]:
-                animal_ids.append(mob)
+        for id in data.mob_data:
+            if "animal" in data.mob_data[id]["tag"]:
+                animal_ids.append(id)
         for mob_number in range(int(self.settings["world_length"] / 16)):
             random_animal_id = random.choice(animal_ids)
             self.mobs.append(Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])}))
             random_x = random.choice(range(self.settings["world_length"]))
+            self.mobs[mob_number].state["health"] = data.mob_data[self.mobs[mob_number].id]["data"]["max_health"]
             self.mobs[mob_number].state["coordinate"] = [float(random_x), float(terrain[int(random_x)])]
             self.mobs[mob_number].state["movement"] = [0.0, 0.0]
         print_progress_bar(1, 1, "Creating New World")
@@ -634,9 +641,28 @@ class World:
             self.place_tile(mouse_in_map)
         # attack
         if key_is_just_down(_mouse_states, "left"):
-            for mob_number in range(len(self.mobs)):
-                if abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5 and abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5:
-                    self.mobs[mob_number].state["health"] -= 1
+            if "weapon" in data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["tag"]:
+                for mob_number in range(len(self.mobs)):
+                    if abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5 and abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5:
+                        self.mobs[mob_number].state["health"] -= data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["data"]["weapon_info"]["damage"]
+        # replace no health mobs to new mobs
+        animal_ids = []
+        for id in data.mob_data:
+            if "animal" in data.mob_data[id]["tag"]:
+                animal_ids.append(id)
+        for mob_number in range(len(self.mobs)):
+            if self.mobs[mob_number].state["health"] <= 0:
+                random_animal_id = random.choice(animal_ids)
+                self.mobs[mob_number] = Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])})
+                random_x = random.choice(range(self.settings["world_length"]))
+                top_y = self.settings["world_height"] - 1
+                while top_y >= 0:
+                    if "mob_transparent" not in data.tile_data[self.map[random_x][top_y].id]["tag"]:
+                        break
+                    top_y -= 1
+                self.mobs[mob_number].state["health"] = data.mob_data[self.mobs[mob_number].id]["data"]["max_health"]
+                self.mobs[mob_number].state["coordinate"] = [float(random_x), float(top_y + 1)]
+                self.mobs[mob_number].state["movement"] = [0.0, 0.0]
         # select backpack
         self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
         self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]

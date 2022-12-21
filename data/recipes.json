@@ -30,6 +30,27 @@
         ],
         "to": [
             {
+                "id": "flint_sword",
+                "count": 1,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
+                "id": "flint",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "wooden_stick",
+                "count": 4,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
                 "id": "flint_pickaxe",
                 "count": 1,
                 "state": {}
@@ -52,6 +73,90 @@
         "to": [
             {
                 "id": "flint_axe",
+                "count": 1,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
+                "id": "copper_ore",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "coal",
+                "count": 1,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "copper_ingot",
+                "count": 1,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
+                "id": "silver_ore",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "coal",
+                "count": 1,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "silver_ingot",
+                "count": 1,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
+                "id": "iron_ore",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "coal",
+                "count": 1,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "iron_ingot",
+                "count": 1,
+                "state": {}
+            }
+        ]
+    },
+    {
+        "from": [
+            {
+                "id": "gold_ore",
+                "count": 4,
+                "state": {}
+            },
+            {
+                "id": "coal",
+                "count": 1,
+                "state": {}
+            }
+        ],
+        "to": [
+            {
+                "id": "gold_ingot",
                 "count": 1,
                 "state": {}
             }

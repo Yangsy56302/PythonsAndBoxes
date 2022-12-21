@@ -103,6 +103,46 @@
         "state": {},
         "tag": []
     },
+    "gold_ore": {
+        "name": "Gold Ore",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "copper_ingot": {
+        "name": "Copper Ingot",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "silver_ingot": {
+        "name": "Silver Ingot",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "iron_ingot": {
+        "name": "Iron Ingot",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
+    "gold_ingot": {
+        "name": "Gold Ingot",
+        "data": {
+            "max_count": 256
+        },
+        "state": {},
+        "tag": []
+    },
     "wooden_stick": {
         "name": "Wooden Stick",
         "data": {
@@ -134,5 +174,16 @@
         },
         "state": {},
         "tag": ["tool"]
+    },
+    "flint_sword": {
+        "name": "Flint Sword",
+        "data": {
+            "max_count": 1,
+            "weapon_info": {
+                "damage": 16
+            }
+        },
+        "state": {},
+        "tag": ["weapon"]
     }
 }

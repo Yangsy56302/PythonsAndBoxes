@@ -296,5 +296,29 @@
             "stone",
             "ore"
         ]
+    },
+    "gold_ore": {
+        "name": "Gold Ore",
+        "data": {
+            "mining_tool": "pickaxe",
+            "mining_level": 1,
+            "tile_drop": [
+                {
+                    "id": "rock",
+                    "count": 1,
+                    "state": {}
+                },
+                {
+                    "id": "gold_ore",
+                    "count": 1,
+                    "state": {}
+                }
+            ]
+        },
+        "state": {},
+        "tag": [
+            "stone",
+            "ore"
+        ]
     }
 }

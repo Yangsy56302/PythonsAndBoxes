@@ -10,9 +10,9 @@
             "temporary": {},
             "selected_slot": 0,
             "backpack": [
-                {"id": "empty", "count": 0, "state": {}},
-                {"id": "empty", "count": 0, "state": {}},
-                {"id": "empty", "count": 0, "state": {}},
+                {"id": "flint_sword", "count": 1, "state": {}},
+                {"id": "flint_axe", "count": 1, "state": {}},
+                {"id": "flint_pickaxe", "count": 1, "state": {}},
                 {"id": "empty", "count": 0, "state": {}},
                 {"id": "empty", "count": 0, "state": {}},
                 {"id": "empty", "count": 0, "state": {}},
