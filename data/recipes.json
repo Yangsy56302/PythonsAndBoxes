@@ -94,7 +94,7 @@
         "to": [
             {
                 "id": "copper_ingot",
-                "count": 1,
+                "count": 4,
                 "state": {}
             }
         ]
@@ -115,7 +115,7 @@
         "to": [
             {
                 "id": "silver_ingot",
-                "count": 1,
+                "count": 4,
                 "state": {}
             }
         ]
@@ -136,7 +136,7 @@
         "to": [
             {
                 "id": "iron_ingot",
-                "count": 1,
+                "count": 4,
                 "state": {}
             }
         ]
@@ -157,7 +157,7 @@
         "to": [
             {
                 "id": "gold_ingot",
-                "count": 1,
+                "count": 4,
                 "state": {}
             }
         ]

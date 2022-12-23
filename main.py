@@ -770,13 +770,20 @@ class World:
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
         # display selected item's name
-        item_info = str(self.player.state["backpack"][self.player.state["selected_slot"]].count) + " " + data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["name"].upper()
+        item_info = str(self.player.state["backpack"][self.player.state["selected_slot"]].count) + "*" + data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["name"]
         for character_number in range(len(item_info)):
             character_image_unscaled = assets.font_images[item_info[character_number]]
             character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
             character_image_position = (int((character_number * 16 - len(item_info) * 8) * settings["gui_scale"] + settings["window_length"] / 2),
                                         int(settings["window_height"] - 32 * settings["gui_scale"]))
             screen.blit(character_image, character_image_position)
+        if settings["debug"] == True:
+            player_coordinate = str(int(self.player.state["coordinate"][0])) + "," + str(int(self.player.state["coordinate"][1]))
+            for character_number in range(len(player_coordinate)):
+                character_image_unscaled = assets.font_images[player_coordinate[character_number]]
+                character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
+                character_image_position = (int(character_number * 16 * settings["gui_scale"]), 0)
+                screen.blit(character_image, character_image_position)
     def display_craft(self):
         if self.player.state["temporary"]["successful_crafting"] == "true":
             window.fill("#008000")
@@ -820,7 +827,7 @@ class World:
             screen.blit(slot_image, item_image_position)
             screen.blit(item_image, item_image_position)
         # display selected recipe's name
-        item_info = str(data.recipe_data[selected_recipe]["to"][0]["count"]) + " " + data.item_data[data.recipe_data[selected_recipe]["to"][0]["id"]]["name"].upper()
+        item_info = str(data.recipe_data[selected_recipe]["to"][0]["count"]) + "*" + data.item_data[data.recipe_data[selected_recipe]["to"][0]["id"]]["name"]
         for character_number in range(len(item_info)):
             character_image_unscaled = assets.font_images[item_info[character_number]]
             character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
@@ -861,7 +868,7 @@ while return_value != "quit":
     stop_tick_time = time.time()
     while stop_tick_time - start_tick_time < 0.0625:
         stop_tick_time = time.time()
-if settings["write_world"] == True:
+if settings["write_world"] == True and os.path.exists(settings["world_directory"]):
     print_info("Writing World File...")
     file = open(settings["world_directory"], mode="w")
     json.dump(world.set_to_json(), file)
