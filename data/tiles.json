@@ -11,7 +11,8 @@
             "unbreakable",
             "replaceable",
             "mob_transparent",
-            "light_transparent"
+            "light_transparent",
+            "cant_be_support_tile"
         ]
     },
     "test_tile": {
@@ -95,7 +96,7 @@
             ]
         },
         "state": {},
-        "tag": []
+        "tag": ["falling_tile"]
     },
     "grassy_soil": {
         "name": "Grassy Soil",
@@ -116,7 +117,10 @@
             ]
         },
         "state": {},
-        "tag": ["soil"]
+        "tag": [
+            "soil",
+            "falling_tile"
+        ]
     },
     "grass": {
         "name": "Grass",
@@ -133,8 +137,11 @@
         },
         "state": {},
         "tag": [
+            "replaceable",
             "mob_transparent",
-            "light_transparent"
+            "light_transparent",
+            "need_support_tile",
+            "cant_be_support_tile"
         ]
     },
     "log": {
@@ -197,8 +204,11 @@
         },
         "state": {},
         "tag": [
+            "replaceable",
             "mob_transparent",
-            "light_transparent"
+            "light_transparent",
+            "need_support_tile",
+            "cant_be_support_tile"
         ]
     },
     "coal_ore": {

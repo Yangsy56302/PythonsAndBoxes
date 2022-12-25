@@ -639,6 +639,18 @@ class World:
             self.break_tile(mouse_in_map)
         if key_is_down(_mouse_states, "right"):
             self.place_tile(mouse_in_map)
+        for x in range(int(self.player.state["coordinate"][0]) - 64, int(self.player.state["coordinate"][0]) + 65):
+            for y in range(int(self.player.state["coordinate"][1]) - 64, int(self.player.state["coordinate"][1]) + 65):
+                if self.valid_coordinate((x, y)):
+                    if "need_support_tile" in data.tile_data[self.map[x][y].id]["tag"]:
+                        if self.valid_coordinate((x, y - 1)):
+                            if "cant_be_support_tile" in data.tile_data[self.map[x][y - 1].id]["tag"]:
+                                self.map[x][y] = Tile({"id": "air", "state": {}})
+                    if "falling_tile" in data.tile_data[self.map[x][y].id]["tag"]:
+                        if self.valid_coordinate((x, y - 1)):
+                            if "replaceable" in data.tile_data[self.map[x][y - 1].id]["tag"]:
+                                self.map[x][y - 1] = self.map[x][y]
+                                self.map[x][y] = Tile({"id": "air", "state": {}})
         # attack
         if key_is_just_down(_mouse_states, "left"):
             if "weapon" in data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["tag"]:
