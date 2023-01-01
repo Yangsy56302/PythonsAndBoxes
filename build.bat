@@ -1,4 +1,4 @@
-pyinstaller --onefile --console --distpath . --workpath ./temp/build --icon ./assets/images/icons/main.ico --name main.exe main.py
+pyinstaller --onefile --console --distpath . --workpath ./temp/build --icon ./assets/images/icons/PythonsAndBoxes.ico --name PythonsAndBoxes.exe PythonsAndBoxes.py
 rd /S /Q temp
-del main.exe.spec
+del PythonsAndBoxes.exe.spec
 pause
