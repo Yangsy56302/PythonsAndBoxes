@@ -10,7 +10,7 @@ import copy
 
 if __name__ != "__main__":
     print("[ERROR] The value of __name__ is not \"__main__\".")
-    sys.exit(1)
+    os._exit(1)
 
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
@@ -48,17 +48,6 @@ def print_error(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n")
     return False
 
 
-def progress_bar(_finished: float, _total: float) -> str:
-    finished = float(_finished)
-    total = float(_total)
-    percentage = finished / total
-    return "{:>7.2%} [{:.<100}]".format(percentage, "#" * int(percentage * 100))
-
-
-def print_progress_bar(_finished: float, _total: float, _information: str) -> None:
-    print_info(_information + ": " + progress_bar(_finished, _total))
-
-
 pygame.init()
 window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
 window.fill((0, 0, 0))
@@ -78,28 +67,33 @@ class Data:
     recipe_data: list[dict[str, Any]]
     structure_data: dict[str, Any]
     def load(self) -> None:
+        print_info("Loading Tile Data...")
         file = open(".\\data\\tiles.json", mode="r")
         self.tile_data = json.load(file)
         file.close()
+        print_info("Loading Item Data...")
         file = open(".\\data\\items.json", mode="r")
         self.item_data = json.load(file)
         file.close()
+        print_info("Loading Mob Data...")
         file = open(".\\data\\mobs.json", mode="r")
         self.mob_data = json.load(file)
         file.close()
+        print_info("Loading Font Data...")
         file = open(".\\data\\fonts.json", mode="r")
         self.font_data = json.load(file)
         file.close()
+        print_info("Loading Recipe Data...")
         file = open(".\\data\\recipes.json", mode="r")
         self.recipe_data = json.load(file)
         file.close()
+        print_info("Loading Structure Data...")
         file = open(".\\data\\structures.json", mode="r")
         self.structure_data = json.load(file)
         file.close()
     def __init__(self) -> None:
         print_info("Loading Data...")
         self.load()
-        print_info("Done.")
 data = Data()
 
 
@@ -113,35 +107,22 @@ class Assets:
         self.item_images = {}
         self.mob_images = {}
         self.font_images = {}
-        count = 0
-        max_count = len(data.tile_data)
+        print_info("Loading Tile Images...")
         for id in data.tile_data:
             self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
-            count += 1
-            print_progress_bar(count, max_count, "Loading Tile Images")
-        count = 0
-        max_count = len(data.item_data)
+        print_info("Loading Item Images...")
         for id in data.item_data:
             self.item_images[id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()
-            count += 1
-            print_progress_bar(count, max_count, "Loading Item Images")
-        count = 0
-        max_count = len(data.mob_data)
+        print_info("Loading Mob Images...")
         for id in data.mob_data:
             self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
-            count += 1
-            print_progress_bar(count, max_count, "Loading Mob Images")
-        count = 0
-        max_count = len(data.font_data)
+        print_info("Loading Font Images...")
         font_image = pygame.image.load(".\\assets\\images\\fonts\\default.png").convert_alpha()
         for id in data.font_data:
             self.font_images[id] = font_image.subsurface(((data.font_data[id]["coordinate"][0] * 16, data.font_data[id]["coordinate"][1] * 16), (16, 16)))
-            count += 1
-            print_progress_bar(count, max_count, "Loading Font Images")
     def __init__(self) -> None:
         print_info("Loading Assets...")
         self.load()
-        print_info("Done.")
 assets = Assets()
 
 
@@ -289,9 +270,34 @@ class Character:
         screen.blit(character_image, _position)
 
 
-def display_text(_text: list[Character], _position: tuple[int, int], _scale: Optional[int] = 1) -> None:
-    for index in range(len(_text)):
-        _text[index].display((_position[0] + (index * _scale * 16), _position[1]))
+def display_text(_text: list[Character], _position: tuple[int, int], _scale: Optional[int] = 1, _alignment: str = "top_left") -> None:
+    if _alignment == "top_left":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16), _position[1]), _scale)
+    elif _alignment == "top":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16) - (len(_text) * _scale * 8), _position[1]), _scale)
+    elif _alignment == "top_right":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16) - (len(_text) * _scale * 16), _position[1]), _scale)
+    elif _alignment == "left":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16), _position[1] - (_scale * 8)), _scale)
+    elif _alignment == "right":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16) - (len(_text) * _scale * 16), _position[1] - (_scale * 8)), _scale)
+    elif _alignment == "bottom_left":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16), _position[1] - (_scale * 16)), _scale)
+    elif _alignment == "bottom":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16) - (len(_text) * _scale * 8), _position[1] - (_scale * 16)), _scale)
+    elif _alignment == "bottom_right":
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16) - (len(_text) * _scale * 16), _position[1] - (_scale * 16)), _scale)
+    else:
+        for index in range(len(_text)):
+            _text[index].display((_position[0] + (index * _scale * 16) - (len(_text) * _scale * 8), _position[1] - (_scale * 8)), _scale)
 
 
 def get_mouse_states(_events, _states: dict[str, Any]) -> dict[str, Any]:
@@ -463,10 +469,10 @@ class World:
     def create(self, _settings: dict[str, Any]) -> None:
         # create new world
         self.settings = _settings
+        print_info("Generating Terrain...")
         self.map = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
         terrain = self.noise()
         for x in range(self.settings["world_length"]):
-            print_progress_bar(x, self.settings["world_length"], "Creating New World")
             dirt_thick = random.choice(range(3, 6))
             for y in range(terrain[x]):
                 if not self.valid_coordinate((x, y)):
@@ -506,6 +512,7 @@ class World:
                         self.map[x][y] = Tile({"id": "gold_ore", "state": {}})
                     else:
                         self.map[x][y] = Tile({"id": "stone", "state": {}})
+        print_info("Generating Cave...")
         for i in range(int(self.settings["world_length"] / 4)):
             cave_line = self.cave((random.choice(range(self.settings["world_length"])), random.choice(range(self.settings["world_height"]))), random.choice(range(16, 64)))
             for coordinate in range(len(cave_line)):
@@ -513,10 +520,12 @@ class World:
                     for my in range(-2, 3):
                         if self.valid_coordinate((cave_line[coordinate][0] + mx, cave_line[coordinate][1] + my)):
                             self.map[int(cave_line[coordinate][0] + mx)][int(cave_line[coordinate][1] + my)] = Tile({"id": "air", "state": {}})
+        print_info("Creating Player...")
         self.player = Player({"id": "player", "state": copy.deepcopy(data.mob_data["player"]["state"])})
         self.player.state["health"] = data.mob_data["player"]["data"]["max_health"]
         self.player.state["coordinate"] = [self.settings["world_length"] / 2, float(terrain[int(self.settings["world_length"] / 2)])]
         self.player.state["movement"] = [0.0, 0.0]
+        print_info("Creating Mobs...")
         self.mobs = []
         animal_ids = []
         for id in data.mob_data:
@@ -529,12 +538,12 @@ class World:
             self.mobs[mob_number].state["health"] = data.mob_data[self.mobs[mob_number].id]["data"]["max_health"]
             self.mobs[mob_number].state["coordinate"] = [float(random_x), float(terrain[int(random_x)])]
             self.mobs[mob_number].state["movement"] = [0.0, 0.0]
-        print_progress_bar(1, 1, "Creating New World")
-        print_info("Done.")
     def __init__(self, _json: dict[str, Any]) -> None:
         if _json == {}:
+            print_info("Creating New World...")
             self.create(settings["default_world_settings"])
         else:
+            print_info("Loading World File...")
             self.get_from_json(_json)
     def mob_on_ground(self, _mob) -> bool:
         # get tile's coordinate
@@ -833,12 +842,8 @@ class World:
             screen.blit(item_image, item_image_position)
         # display selected item's name
         item_info = str(self.player.state["backpack"][self.player.state["selected_slot"]].count) + "*" + data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["name"]
-        for character_number in range(len(item_info)):
-            character_image_unscaled = assets.font_images[item_info[character_number]]
-            character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
-            character_image_position = (int((character_number * 16 - len(item_info) * 8) * settings["gui_scale"] + settings["window_length"] / 2),
-                                        int(settings["window_height"] - 32 * settings["gui_scale"]))
-            screen.blit(character_image, character_image_position)
+        item_info_displayable = [Character(item_info[i]) for i in range(len(item_info))]
+        display_text(item_info_displayable, (settings["window_length"] / 2, settings["window_height"] - settings["gui_scale"] * 16), settings["gui_scale"], "bottom")
         # display debug screen
         if settings["debug"] == True:
             player_coordinate = str(int(self.player.state["coordinate"][0])) + "," + str(int(self.player.state["coordinate"][1]))
@@ -891,12 +896,10 @@ class World:
             screen.blit(item_image, item_image_position)
         # display selected recipe's name
         item_info = str(data.recipe_data[selected_recipe]["to"][0]["count"]) + "*" + data.item_data[data.recipe_data[selected_recipe]["to"][0]["id"]]["name"]
-        for character_number in range(len(item_info)):
-            character_image_unscaled = assets.font_images[item_info[character_number]]
-            character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
-            character_image_position = (int((character_number * 16 - len(item_info) * 8) * settings["gui_scale"] + settings["window_length"] / 2),
-                                        int(settings["window_height"] - 32 * settings["gui_scale"]))
-            screen.blit(character_image, character_image_position)
+        item_info_displayable = [Character(item_info[i]) for i in range(len(item_info))]
+        display_text(item_info_displayable, (settings["window_length"] / 2, settings["window_height"] - settings["gui_scale"] * 16), settings["gui_scale"], "bottom")
+
+
 if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
     print_info("Reading World File...")
     file = open(settings["world_directory"], mode="r")
@@ -905,14 +908,6 @@ if settings["read_world"] == True and os.path.exists(settings["world_directory"]
     print_info("Done.")
 else:
     world = World({})
-
-
-chr_1 = Character("1")
-chr_2 = Character("2", {"color": (255, 255, 255, 255)})
-chr_3 = Character("3", {"color": (255, 255, 255, 128)})
-chr_4 = Character("4", {"color": (0, 255, 0, 255)})
-chr_5 = Character("5", {"color": (0, 128, 0, 128)})
-text = [chr_1, chr_2, chr_3, chr_4, chr_5]
 
 
 return_value = "do_nothing"
@@ -934,7 +929,6 @@ while return_value != "quit":
         world.display_craft()
         if return_value == "world":
             gui = "world"
-    display_text(text, (128, 128))
     window.blit(screen, (0, 0))
     pygame.display.flip()
     stop_tick_time = time.time()
@@ -947,4 +941,4 @@ if settings["write_world"] == True and os.path.exists(settings["world_directory"
     file.close()
     print_info("Done.")
 pygame.quit()
-sys.exit(0)
+os._exit(0)
