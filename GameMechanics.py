@@ -8,13 +8,13 @@ import copy
 class Object:
     id: str
     state: dict[str, Any]
-    def set_to_json(world) -> dict:
-        return {"id": world.id, "state": world.state}
-    def get_from_json(world, _json: dict[str, Any]) -> None:
-        world.id = _json["id"]
-        world.state = _json["state"]
-    def __init__(world, _json: dict[str, Any]) -> None:
-        world.get_from_json(_json)
+    def set_to_json(self) -> dict:
+        return {"id": self.id, "state": self.state}
+    def get_from_json(self, _json: dict[str, Any]) -> None:
+        self.id = _json["id"]
+        self.state = _json["state"]
+    def __init__(self, _json: dict[str, Any]) -> None:
+        self.get_from_json(_json)
 
 
 class Tile(Object):
@@ -22,74 +22,74 @@ class Tile(Object):
 
 
 class Structure(Object):
-    def set_to_json(world) -> dict[str, Any]:
-        return_value = {"id": world.id, "state": {"keys": world.keys, "tiles": world.tiles}}
-        for key in world.keys:
-            return_value["state"]["keys"][key] = world.state["keys"][key].set_to_json()
+    def set_to_json(self) -> dict[str, Any]:
+        return_value = {"id": self.id, "state": {"keys": self.keys, "tiles": self.tiles}}
+        for key in self.keys:
+            return_value["state"]["keys"][key] = self.state["keys"][key].set_to_json()
         return return_value
-    def get_from_json(world, _json: dict[str, Any]) -> None:
-        world.id = _json["id"]
-        world.state = _json["state"]
-        for key in world.keys:
-            world.state["keys"][key] = Tile(_json["state"]["keys"][key])
+    def get_from_json(self, _json: dict[str, Any]) -> None:
+        self.id = _json["id"]
+        self.state = _json["state"]
+        for key in self.keys:
+            self.state["keys"][key] = Tile(_json["state"]["keys"][key])
 
 
 class Item(Object):
     count: int
-    def set_to_json(world) -> dict[str, Any]:
-        return {"id": world.id, "count": world.count, "state": world.state}
-    def get_from_json(world, _json: dict[str, Any]) -> None:
-        world.id = _json["id"]
-        world.count = _json["count"]
-        world.state = _json["state"]
+    def set_to_json(self) -> dict[str, Any]:
+        return {"id": self.id, "count": self.count, "state": self.state}
+    def get_from_json(self, _json: dict[str, Any]) -> None:
+        self.id = _json["id"]
+        self.count = _json["count"]
+        self.state = _json["state"]
 
 
 class Mob(Object):
-    def count_item(world, _item: Item) -> bool:
+    def count_item(self, _item: Item) -> bool:
         if _item.id == "empty":
             return 0
         return_value = 0
-        for slot in range(len(world.state["backpack"])):
-            if world.state["backpack"][slot].id == _item.id:
-                if world.state["backpack"][slot].state == _item.state:
-                    return_value += world.state["backpack"][slot].count
+        for slot in range(len(self.state["backpack"])):
+            if self.state["backpack"][slot].id == _item.id:
+                if self.state["backpack"][slot].state == _item.state:
+                    return_value += self.state["backpack"][slot].count
         return return_value
-    def add_item(world, _item: Item) -> bool:
-        for slot in range(len(world.state["backpack"])):
+    def add_item(self, _item: Item) -> bool:
+        for slot in range(len(self.state["backpack"])):
             if _item.id == "empty" or _item.count == 0:
                 break
-            if world.state["backpack"][slot].id == _item.id:
-                if world.state["backpack"][slot].state == _item.state:
+            if self.state["backpack"][slot].id == _item.id:
+                if self.state["backpack"][slot].state == _item.state:
                     max_count = data.item_data[_item.id]["data"]["max_count"]
-                    free_space = max(0, max_count - world.state["backpack"][slot].count - _item.count)
+                    free_space = max(0, max_count - self.state["backpack"][slot].count - _item.count)
                     addition = min(free_space, _item.count)
                     if addition > 0:
-                        world.state["backpack"][slot].count += addition
+                        self.state["backpack"][slot].count += addition
                         _item.count -= addition
                         if _item.count == 0:
                             _item = Item({"id": "empty", "count": 0, "state": {}})
-        for slot in range(len(world.state["backpack"])):
+        for slot in range(len(self.state["backpack"])):
             if _item.id == "empty" or _item.count == 0:
                 break
-            if world.state["backpack"][slot].id == "empty":
-                world.state["backpack"][slot] = _item
+            if self.state["backpack"][slot].id == "empty":
+                self.state["backpack"][slot] = _item
                 _item = Item({"id": "empty", "count": 0, "state": {}})
         if _item.id == "empty" or _item.count == 0:
             return True
         else:
             return False
-    def subtract_item(world, _item: Item) -> bool:
-        for slot in range(len(world.state["backpack"])):
+    def subtract_item(self, _item: Item) -> bool:
+        for slot in range(len(self.state["backpack"])):
             if _item.id == "empty" or _item.count == 0:
                 break
-            if world.state["backpack"][slot].id == _item.id:
-                if world.state["backpack"][slot].state == _item.state:
-                    subtraction = min(world.state["backpack"][slot].count, _item.count)
+            if self.state["backpack"][slot].id == _item.id:
+                if self.state["backpack"][slot].state == _item.state:
+                    subtraction = min(self.state["backpack"][slot].count, _item.count)
                     if subtraction > 0:
-                        world.state["backpack"][slot].count -= subtraction
+                        self.state["backpack"][slot].count -= subtraction
                         _item.count -= subtraction
-                        if world.state["backpack"][slot].count == 0:
-                            world.state["backpack"][slot] = Item({"id": "empty", "count": 0, "state": {}})
+                        if self.state["backpack"][slot].count == 0:
+                            self.state["backpack"][slot] = Item({"id": "empty", "count": 0, "state": {}})
                         if _item.count == 0:
                             _item = Item({"id": "empty", "count": 0, "state": {}})
         if _item.id == "empty" or _item.count == 0:
@@ -99,31 +99,31 @@ class Mob(Object):
 
 
 class Player(Mob):
-    def set_to_json(world) -> dict[str, Any]:
-        return_value = {"id": world.id, "state": world.state}
-        for slot_number in range(len(world.state["backpack"])):
-            return_value["state"]["backpack"][slot_number] = world.state["backpack"][slot_number].set_to_json()
+    def set_to_json(self) -> dict[str, Any]:
+        return_value = {"id": self.id, "state": self.state}
+        for slot_number in range(len(self.state["backpack"])):
+            return_value["state"]["backpack"][slot_number] = self.state["backpack"][slot_number].set_to_json()
         return return_value
-    def get_from_json(world, _json: dict[str, Any]) -> None:
-        world.id = _json["id"]
-        world.state = _json["state"]
+    def get_from_json(self, _json: dict[str, Any]) -> None:
+        self.id = _json["id"]
+        self.state = _json["state"]
         for slot_number in range(len(_json["state"]["backpack"])):
-            world.state["backpack"][slot_number] = Item(_json["state"]["backpack"][slot_number])
+            self.state["backpack"][slot_number] = Item(_json["state"]["backpack"][slot_number])
 
 
 class Character:
     character: str
     state: dict[str, Any]
-    def set_default(world) -> None:
-        world.state.setdefault("color", (255, 255, 255, 255))
-    def __init__(world, _character: str, _state: Optional[dict[str, Any]] = {}) -> None:
-        world.character = _character
-        world.state = _state
-        world.set_default()
-    def display(world, _position: tuple[int, int], _scale: Optional[int] = 1) -> None:
-        character_image_unscaled = assets.font_images[world.character]
+    def set_default(self) -> None:
+        self.state.setdefault("color", (255, 255, 255, 255))
+    def __init__(self, _character: str, _state: Optional[dict[str, Any]] = {}) -> None:
+        self.character = _character
+        self.state = _state
+        self.set_default()
+    def display(self, _position: tuple[int, int], _scale: Optional[int] = 1) -> None:
+        character_image_unscaled = assets.font_images[self.character]
         character_image_untinted = pygame.transform.scale(character_image_unscaled, (16 * _scale, 16 * _scale))
-        character_image = change_image_color(character_image_untinted, pygame.Color(world.state["color"]))
+        character_image = change_image_color(character_image_untinted, pygame.Color(self.state["color"]))
         screen.blit(character_image, _position)
 
 
@@ -162,29 +162,29 @@ class World:
     map: list[list[Tile]]
     player: Player
     mobs: list[Mob]
-    def set_to_json(world) -> dict[str, Any]:
+    def set_to_json(self) -> dict[str, Any]:
         json_map = []
-        for x in range(world.settings["world_length"]):
+        for x in range(self.settings["world_length"]):
             json_map.append([])
-            for y in range(world.settings["world_height"]):
-                json_map[x].append(world.map[x][y].set_to_json())
+            for y in range(self.settings["world_height"]):
+                json_map[x].append(self.map[x][y].set_to_json())
         json_mobs = []
-        for mob_number in range(len(world.mobs)):
-            json_mobs.append(world.mobs[mob_number].set_to_json())
-        return {"map": json_map, "player": world.player.set_to_json(), "mobs": json_mobs, "settings": world.settings}
-    def get_from_json(world, _json: dict[str, Any]) -> None:
-        world.settings = _json["settings"]
-        world.map = []
-        for x in range(world.settings["world_length"]):
-            world.map.append([])
-            for y in range(world.settings["world_height"]):
-                world.map[x].append(Tile(_json["map"][x][y]))
-        world.player = Player(_json["player"])
+        for mob_number in range(len(self.mobs)):
+            json_mobs.append(self.mobs[mob_number].set_to_json())
+        return {"map": json_map, "player": self.player.set_to_json(), "mobs": json_mobs, "settings": self.settings}
+    def get_from_json(self, _json: dict[str, Any]) -> None:
+        self.settings = _json["settings"]
+        self.map = []
+        for x in range(self.settings["world_length"]):
+            self.map.append([])
+            for y in range(self.settings["world_height"]):
+                self.map[x].append(Tile(_json["map"][x][y]))
+        self.player = Player(_json["player"])
         for mob_number in range(len(_json.mobs)):
-            world.mobs.append(Mob(_json["mobs"][mob_number]))
-    def valid_coordinate(world, _coordinate: tuple[int, int]) -> bool:
-        return _coordinate[0] >= 0 and _coordinate[0] < world.settings["world_length"] and _coordinate[1] >= 0 and _coordinate[1] < world.settings["world_height"]
-    def build_structure(world, _coordinate: tuple[int, int], _id: str) -> bool:
+            self.mobs.append(Mob(_json["mobs"][mob_number]))
+    def valid_coordinate(self, _coordinate: tuple[int, int]) -> bool:
+        return _coordinate[0] >= 0 and _coordinate[0] < self.settings["world_length"] and _coordinate[1] >= 0 and _coordinate[1] < self.settings["world_height"]
+    def build_structure(self, _coordinate: tuple[int, int], _id: str) -> bool:
         structure = data.structure_data[_id]
         length = len(structure["tiles"][0])
         height = len(structure["tiles"])
@@ -193,35 +193,35 @@ class World:
             for structure_y in range(height):
                 map_x = structure_x + _coordinate[0] - structure["core"][0]
                 map_y = height - structure_y - 1 + _coordinate[1] - structure["core"][1]
-                if world.valid_coordinate((map_x, map_y)):
+                if self.valid_coordinate((map_x, map_y)):
                     if structure["tiles"][structure_y][structure_x] != " ":
-                        world.map[map_x][map_y] = Tile(structure["keys"][structure["tiles"][structure_y][structure_x]])
+                        self.map[map_x][map_y] = Tile(structure["keys"][structure["tiles"][structure_y][structure_x]])
                         return_value = True
         return return_value
-    def noise(world) -> list[int]:
-        random.seed(world.settings["seed"])
-        terrain = [world.settings["world_height"] / 2 for i in range(world.settings["world_length"])]
-        offset = [0 for i in range(world.settings["world_length"])]
+    def noise(self) -> list[int]:
+        random.seed(self.settings["seed"])
+        terrain = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
+        offset = [0 for i in range(self.settings["world_length"])]
         step_length = 1
         step_count = 0
         offset_1 = random.uniform(step_length * -0.25, step_length * 0.25)
         offset_2 = random.uniform(step_length * -0.25, step_length * 0.25)
         # generate height map
         while step_length <= 2 ** 6:
-            for x in range(world.settings["world_length"]):
+            for x in range(self.settings["world_length"]):
                 step_count += 1
                 if x % step_length == 0:
                     offset_1 = offset_2
                     offset_2 = random.uniform(step_length * -0.25, step_length * 0.25)
                     step_count = 0
                 offset[x] = offset_1 + (step_count * ((offset_2 - offset_1) / step_length))
-            for x in range(world.settings["world_length"]):
+            for x in range(self.settings["world_length"]):
                 terrain[x] += offset[x]
             step_length *= 2
-        for x in range(world.settings["world_length"]):
+        for x in range(self.settings["world_length"]):
             terrain[x] = int(terrain[x])
         return terrain
-    def cave(world, _coordinate: tuple[int, int], _length: int) -> list[tuple[float, float]]:
+    def cave(self, _coordinate: tuple[int, int], _length: int) -> list[tuple[float, float]]:
         # generate cave
         return_value = []
         angle = random.random()
@@ -234,95 +234,95 @@ class World:
             coordinate = (coordinate[0] + math.cos(angle * 2 * math.pi), coordinate[1] + math.sin(angle * 2 * math.pi))
             return_value.append(copy.deepcopy(coordinate))
         return return_value
-    def create(world, _settings: dict[str, Any]) -> None:
-        # create new world
-        world.settings = _settings
+    def create(self, _settings: dict[str, Any]) -> None:
+        # create new self
+        self.settings = _settings
         print_info("Generating Terrain...")
-        world.map = [[Tile({"id": "air", "state": {}}) for y in range(world.settings["world_height"])] for x in range(world.settings["world_length"])]
-        terrain = world.noise()
-        for x in range(world.settings["world_length"]):
+        self.map = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
+        terrain = self.noise()
+        for x in range(self.settings["world_length"]):
             dirt_thick = random.choice(range(3, 6))
             for y in range(terrain[x]):
-                if not world.valid_coordinate((x, y)):
+                if not self.valid_coordinate((x, y)):
                     break
                 if terrain[x] - y == 1:
-                    world.map[x][y] = Tile({"id": "grassy_soil", "state": {}})
+                    self.map[x][y] = Tile({"id": "grassy_soil", "state": {}})
                     random_number = random.choice(range(64))
                     if random_number == 0:
-                        if world.valid_coordinate((x, y + 1)):
-                            world.map[x][y + 1] = Tile({"id": "sapling", "state": {}})
+                        if self.valid_coordinate((x, y + 1)):
+                            self.map[x][y + 1] = Tile({"id": "sapling", "state": {}})
                     elif random_number == 1:
-                        world.build_structure((x, y), "tree_3")
+                        self.build_structure((x, y), "tree_3")
                     elif random_number == 2:
-                        world.build_structure((x, y), "tree_4")
+                        self.build_structure((x, y), "tree_4")
                     elif random_number == 3:
-                        world.build_structure((x, y), "tree_5")
+                        self.build_structure((x, y), "tree_5")
                     elif random_number <= 16:
-                        if world.valid_coordinate((x, y + 1)):
-                            world.map[x][y + 1] = Tile({"id": "grass", "state": {}})
+                        if self.valid_coordinate((x, y + 1)):
+                            self.map[x][y + 1] = Tile({"id": "grass", "state": {}})
                 elif terrain[x] - y <= dirt_thick:
                     random_number = random.choice(range(16))
                     if random_number == 0:
-                        world.map[x][y] = Tile({"id": "gravel", "state": {}})
+                        self.map[x][y] = Tile({"id": "gravel", "state": {}})
                     else:
-                        world.map[x][y] = Tile({"id": "soil", "state": {}})
+                        self.map[x][y] = Tile({"id": "soil", "state": {}})
                 else:
-                    random_number = random.choice(range(int((y + world.settings["world_height"]) / 2)))
+                    random_number = random.choice(range(int((y + self.settings["world_height"]) / 2)))
                     if random_number == 0:
-                        world.map[x][y] = Tile({"id": "coal_ore", "state": {}})
+                        self.map[x][y] = Tile({"id": "coal_ore", "state": {}})
                     elif random_number == 1:
-                        world.map[x][y] = Tile({"id": "copper_ore", "state": {}})
+                        self.map[x][y] = Tile({"id": "copper_ore", "state": {}})
                     elif random_number == 2:
-                        world.map[x][y] = Tile({"id": "silver_ore", "state": {}})
+                        self.map[x][y] = Tile({"id": "silver_ore", "state": {}})
                     elif random_number == 3:
-                        world.map[x][y] = Tile({"id": "iron_ore", "state": {}})
+                        self.map[x][y] = Tile({"id": "iron_ore", "state": {}})
                     elif random_number == 4:
-                        world.map[x][y] = Tile({"id": "gold_ore", "state": {}})
+                        self.map[x][y] = Tile({"id": "gold_ore", "state": {}})
                     else:
-                        world.map[x][y] = Tile({"id": "stone", "state": {}})
+                        self.map[x][y] = Tile({"id": "stone", "state": {}})
         print_info("Generating Cave...")
-        for i in range(int(world.settings["world_length"] / 4)):
-            cave_line = world.cave((random.choice(range(world.settings["world_length"])), random.choice(range(world.settings["world_height"]))), random.choice(range(16, 64)))
+        for i in range(int(self.settings["world_length"] / 4)):
+            cave_line = self.cave((random.choice(range(self.settings["world_length"])), random.choice(range(self.settings["world_height"]))), random.choice(range(16, 64)))
             for coordinate in range(len(cave_line)):
                 for mx in range(-2, 3):
                     for my in range(-2, 3):
-                        if world.valid_coordinate((cave_line[coordinate][0] + mx, cave_line[coordinate][1] + my)):
-                            world.map[int(cave_line[coordinate][0] + mx)][int(cave_line[coordinate][1] + my)] = Tile({"id": "air", "state": {}})
+                        if self.valid_coordinate((cave_line[coordinate][0] + mx, cave_line[coordinate][1] + my)):
+                            self.map[int(cave_line[coordinate][0] + mx)][int(cave_line[coordinate][1] + my)] = Tile({"id": "air", "state": {}})
         print_info("Creating Player...")
-        world.player = Player({"id": "player", "state": copy.deepcopy(data.mob_data["player"]["state"])})
-        world.player.state["health"] = data.mob_data["player"]["data"]["max_health"]
-        world.player.state["coordinate"] = [world.settings["world_length"] / 2, float(terrain[int(world.settings["world_length"] / 2)])]
-        world.player.state["movement"] = [0.0, 0.0]
+        self.player = Player({"id": "player", "state": copy.deepcopy(data.mob_data["player"]["state"])})
+        self.player.state["health"] = data.mob_data["player"]["data"]["max_health"]
+        self.player.state["coordinate"] = [self.settings["world_length"] / 2, float(terrain[int(self.settings["world_length"] / 2)])]
+        self.player.state["movement"] = [0.0, 0.0]
         print_info("Creating Mobs...")
-        world.mobs = []
+        self.mobs = []
         animal_ids = []
         for id in data.mob_data:
             if "animal" in data.mob_data[id]["tag"]:
                 animal_ids.append(id)
-        for mob_number in range(int(world.settings["world_length"] / 16)):
+        for mob_number in range(int(self.settings["world_length"] / 16)):
             random_animal_id = random.choice(animal_ids)
-            world.mobs.append(Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])}))
-            random_x = random.choice(range(world.settings["world_length"]))
-            world.mobs[mob_number].state["health"] = data.mob_data[world.mobs[mob_number].id]["data"]["max_health"]
-            world.mobs[mob_number].state["coordinate"] = [float(random_x), float(terrain[int(random_x)])]
-            world.mobs[mob_number].state["movement"] = [0.0, 0.0]
-    def __init__(world, _json: dict[str, Any]) -> None:
+            self.mobs.append(Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])}))
+            random_x = random.choice(range(self.settings["world_length"]))
+            self.mobs[mob_number].state["health"] = data.mob_data[self.mobs[mob_number].id]["data"]["max_health"]
+            self.mobs[mob_number].state["coordinate"] = [float(random_x), float(terrain[int(random_x)])]
+            self.mobs[mob_number].state["movement"] = [0.0, 0.0]
+    def __init__(self, _json: dict[str, Any]) -> None:
         if _json == {}:
             print_info("Creating New World...")
-            world.create(settings["default_world_settings"])
+            self.create(settings["default_world_settings"])
         else:
             print_info("Loading World File...")
-            world.get_from_json(_json)
-    def mob_on_ground(world, _mob) -> bool:
+            self.get_from_json(_json)
+    def mob_on_ground(self, _mob) -> bool:
         # get tile's coordinate
         tile_coordinate = [[int(_mob.state["coordinate"][0] + 0.03125), int(_mob.state["coordinate"][1] - 0.03125)],
                            [int(_mob.state["coordinate"][0] + 0.96875), int(_mob.state["coordinate"][1] - 0.03125)]]
         for coordinate in tile_coordinate:
-            if world.valid_coordinate(coordinate):
-                if "mob_transparent" not in data.tile_data[world.map[coordinate[0]][coordinate[1]].id]["tag"]:
+            if self.valid_coordinate(coordinate):
+                if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                     return True
         return False
-    def move(world, _mob) -> tuple[float, float, float, float]:
+    def move(self, _mob) -> tuple[float, float, float, float]:
         if _mob.state["movement"][0] == 0 and _mob.state["movement"][1] == 0:
             return (_mob.state["coordinate"][0], _mob.state["coordinate"][1], 0.0, 0.0)
         # get _mob's coordinate
@@ -341,38 +341,38 @@ class World:
                                [int(_mob.state["coordinate"][0] + list_x[i] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i] + 0.03125)],
                                [int(_mob.state["coordinate"][0] + list_x[i] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i] + 0.96875)]]
             for j in range(len(tile_coordinate)):
-                if not world.valid_coordinate(tile_coordinate[j]):
-                    return (world.settings["world_length"] / 2, world.settings["world_height"] - 1.0, 0.0, 0.0)
+                if not self.valid_coordinate(tile_coordinate[j]):
+                    return (self.settings["world_length"] / 2, self.settings["world_height"] - 1.0, 0.0, 0.0)
                 # collapse
                 return_value = [_mob.state["coordinate"][0], _mob.state["coordinate"][1], _mob.state["movement"][0], _mob.state["movement"][1]]
-                if "mob_transparent" not in data.tile_data[world.map[tile_coordinate[j][0]][tile_coordinate[j][1]].id]["tag"]:
+                if "mob_transparent" not in data.tile_data[self.map[tile_coordinate[j][0]][tile_coordinate[j][1]].id]["tag"]:
                     if _mob.state["movement"][0] > 0:
                         tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] + 1.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.03125)],
                                            [int(_mob.state["coordinate"][0] + list_x[i - 1] + 1.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
-                            if world.valid_coordinate(coordinate):
-                                if "mob_transparent" not in data.tile_data[world.map[coordinate[0]][coordinate[1]].id]["tag"]:
+                            if self.valid_coordinate(coordinate):
+                                if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[2] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] - 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.03125)],
                                            [int(_mob.state["coordinate"][0] + list_x[i - 1] - 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 0.96875)]]
                         for coordinate in tile_coordinate:
-                            if world.valid_coordinate(coordinate):
-                                if "mob_transparent" not in data.tile_data[world.map[coordinate[0]][coordinate[1]].id]["tag"]:
+                            if self.valid_coordinate(coordinate):
+                                if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[2] = 0.0
                     if _mob.state["movement"][1] > 0:
                         tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] + 1.03125)],
                                            [int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i - 1] + 1.03125)]]
                         for coordinate in tile_coordinate:
-                            if world.valid_coordinate(coordinate):
-                                if "mob_transparent" not in data.tile_data[world.map[coordinate[0]][coordinate[1]].id]["tag"]:
+                            if self.valid_coordinate(coordinate):
+                                if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[3] = 0.0
                     else:
                         tile_coordinate = [[int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.03125), int(_mob.state["coordinate"][1] + list_y[i - 1] - 0.03125)],
                                            [int(_mob.state["coordinate"][0] + list_x[i - 1] + 0.96875), int(_mob.state["coordinate"][1] + list_y[i - 1] - 0.03125)]]
                         for coordinate in tile_coordinate:
-                            if world.valid_coordinate(coordinate):
-                                if "mob_transparent" not in data.tile_data[world.map[coordinate[0]][coordinate[1]].id]["tag"]:
+                            if self.valid_coordinate(coordinate):
+                                if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                                     return_value[3] = 0.0
                     return_value[0] = _mob.state["coordinate"][0] + list_x[i - 1]
                     return_value[1] = _mob.state["coordinate"][1] + list_y[i - 1]
@@ -380,19 +380,19 @@ class World:
         return_value[0] = _mob.state["coordinate"][0] + list_x[-1]
         return_value[1] = _mob.state["coordinate"][1] + list_y[-1]
         return tuple(return_value)
-    def mouse_to_map(world, _mouse_position: tuple[int, int], _world_coordinate: tuple[float, float]) -> tuple[float, float]:
+    def mouse_to_map(self, _mouse_position: tuple[int, int], _world_coordinate: tuple[float, float]) -> tuple[float, float]:
         x_coordinate = -((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) + 0.5 + _world_coordinate[0]
         y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + _world_coordinate[1]
         return (x_coordinate, y_coordinate)
-    def break_tile(world, _coordinate: tuple[int, int]) -> bool:
+    def break_tile(self, _coordinate: tuple[int, int]) -> bool:
         # is this coordinate valid?
-        if not world.valid_coordinate(_coordinate):
+        if not self.valid_coordinate(_coordinate):
             return False
         # is this tile breakable?
-        current_tile = world.map[int(_coordinate[0])][int(_coordinate[1])]
+        current_tile = self.map[int(_coordinate[0])][int(_coordinate[1])]
         if "unbreakable" in data.tile_data[current_tile.id]["tag"]:
             return False
-        current_tool = world.player.state["backpack"][world.player.state["selected_slot"]]
+        current_tool = self.player.state["backpack"][self.player.state["selected_slot"]]
         breakable_tile = False
         if data.tile_data[current_tile.id]["data"]["mining_tool"] == "none":
             breakable_tile = True
@@ -408,151 +408,151 @@ class World:
             return False
         # get item
         for item in range(len(dropped_items)):
-            world.player.add_item(Item(dropped_items[item]))
+            self.player.add_item(Item(dropped_items[item]))
         # break tile
-        world.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
+        self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
         return True
-    def place_tile(world, _coordinate: tuple[int, int]) -> bool:
+    def place_tile(self, _coordinate: tuple[int, int]) -> bool:
         # is this coordinate valid?
-        if not world.valid_coordinate(_coordinate):
+        if not self.valid_coordinate(_coordinate):
             return False
         # is this tile replaceable?
-        current_tile = world.map[int(_coordinate[0])][int(_coordinate[1])]
+        current_tile = self.map[int(_coordinate[0])][int(_coordinate[1])]
         if "replaceable" not in data.tile_data[current_tile.id]["tag"]:
             return False
         # is this item placeable?
-        current_item = world.player.state["backpack"][world.player.state["selected_slot"]]
+        current_item = self.player.state["backpack"][self.player.state["selected_slot"]]
         if "placeable" not in data.item_data[current_item.id]["tag"]:
             return False
         # subtract one item
-        world.player.state["backpack"][world.player.state["selected_slot"]].count -= 1
-        if world.player.state["backpack"][world.player.state["selected_slot"]].count == 0:
-            world.player.state["backpack"][world.player.state["selected_slot"]] = Item({"id": "empty", "count": 0, "state": {}})
+        self.player.state["backpack"][self.player.state["selected_slot"]].count -= 1
+        if self.player.state["backpack"][self.player.state["selected_slot"]].count == 0:
+            self.player.state["backpack"][self.player.state["selected_slot"]] = Item({"id": "empty", "count": 0, "state": {}})
         # set tile
-        world.map[int(_coordinate[0])][int(_coordinate[1])] = Tile(data.item_data[current_item.id]["data"]["to_tile"])
+        self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile(data.item_data[current_item.id]["data"]["to_tile"])
         return True
-    def tick(world, _key_states: dict[int, str], _mouse_states: dict[str, Any]) -> str:
+    def tick(self, _key_states: dict[int, str], _mouse_states: dict[str, Any]) -> str:
         # quit game
         if key_is_just_down(_key_states, pygame.K_DELETE):
             return "quit"
         # jump test
-        if world.mob_on_ground(world.player):
+        if self.mob_on_ground(self.player):
             if key_is_down(_key_states, pygame.K_SPACE):
-                world.player.state["movement"][1] = world.settings["jump_speed"]
+                self.player.state["movement"][1] = self.settings["jump_speed"]
             else:
-                world.player.state["movement"][1] = 0.0
+                self.player.state["movement"][1] = 0.0
         else:
-            world.player.state["movement"][1] += world.settings["gravity"]
+            self.player.state["movement"][1] += self.settings["gravity"]
         # move left/right
-        world.player.state["movement"][0] = 0.0
+        self.player.state["movement"][0] = 0.0
         if key_is_down(_key_states, pygame.K_a):
-            world.player.state["movement"][0] = -data.mob_data["player"]["data"]["speed"]
+            self.player.state["movement"][0] = -data.mob_data["player"]["data"]["speed"]
         if key_is_down(_key_states, pygame.K_d):
-            world.player.state["movement"][0] = data.mob_data["player"]["data"]["speed"]
+            self.player.state["movement"][0] = data.mob_data["player"]["data"]["speed"]
         # zoom
         if key_is_down(_key_states, pygame.K_BACKQUOTE):
             settings["map_scale"] = settings["default_map_scale"] * 2
         else:
             settings["map_scale"] = settings["default_map_scale"]
         # break/place tile
-        mouse_in_map = world.mouse_to_map(_mouse_states["position"], tuple(world.player.state["coordinate"]))
+        mouse_in_map = self.mouse_to_map(_mouse_states["position"], tuple(self.player.state["coordinate"]))
         if key_is_down(_mouse_states, "left"):
-            world.break_tile(mouse_in_map)
+            self.break_tile(mouse_in_map)
         if key_is_down(_mouse_states, "right"):
-            world.place_tile(mouse_in_map)
-        for x in range(int(world.player.state["coordinate"][0]) - 64, int(world.player.state["coordinate"][0]) + 65):
-            for y in range(int(world.player.state["coordinate"][1]) - 64, int(world.player.state["coordinate"][1]) + 65):
-                if world.valid_coordinate((x, y)):
-                    if "need_support_tile" in data.tile_data[world.map[x][y].id]["tag"]:
-                        if world.valid_coordinate((x, y - 1)):
-                            if "cant_be_support_tile" in data.tile_data[world.map[x][y - 1].id]["tag"]:
-                                world.map[x][y] = Tile({"id": "air", "state": {}})
-                    if "falling_tile" in data.tile_data[world.map[x][y].id]["tag"]:
-                        if world.valid_coordinate((x, y - 1)):
-                            if "replaceable" in data.tile_data[world.map[x][y - 1].id]["tag"]:
-                                world.map[x][y - 1] = world.map[x][y]
-                                world.map[x][y] = Tile({"id": "air", "state": {}})
+            self.place_tile(mouse_in_map)
+        for x in range(int(self.player.state["coordinate"][0]) - 64, int(self.player.state["coordinate"][0]) + 65):
+            for y in range(int(self.player.state["coordinate"][1]) - 64, int(self.player.state["coordinate"][1]) + 65):
+                if self.valid_coordinate((x, y)):
+                    if "need_support_tile" in data.tile_data[self.map[x][y].id]["tag"]:
+                        if self.valid_coordinate((x, y - 1)):
+                            if "cant_be_support_tile" in data.tile_data[self.map[x][y - 1].id]["tag"]:
+                                self.map[x][y] = Tile({"id": "air", "state": {}})
+                    if "falling_tile" in data.tile_data[self.map[x][y].id]["tag"]:
+                        if self.valid_coordinate((x, y - 1)):
+                            if "replaceable" in data.tile_data[self.map[x][y - 1].id]["tag"]:
+                                self.map[x][y - 1] = self.map[x][y]
+                                self.map[x][y] = Tile({"id": "air", "state": {}})
         # remove mob hurt effect
-        for mob_number in range(len(world.mobs)):
-            world.mobs[mob_number].state["hurt"] = False
+        for mob_number in range(len(self.mobs)):
+            self.mobs[mob_number].state["hurt"] = False
         # attack mobs
         if key_is_just_down(_mouse_states, "left"):
-            if "weapon" in data.item_data[world.player.state["backpack"][world.player.state["selected_slot"]].id]["tag"]:
-                for mob_number in range(len(world.mobs)):
-                    if abs(world.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0] + 0.5) <= 0.5 and abs(world.mobs[mob_number].state["coordinate"][1] - mouse_in_map[1] + 0.5) <= 0.5:
-                        world.mobs[mob_number].state["health"] -= data.item_data[world.player.state["backpack"][world.player.state["selected_slot"]].id]["data"]["weapon_info"]["damage"]
-                        world.mobs[mob_number].state["hurt"] = True
+            if "weapon" in data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["tag"]:
+                for mob_number in range(len(self.mobs)):
+                    if abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0] + 0.5) <= 0.5 and abs(self.mobs[mob_number].state["coordinate"][1] - mouse_in_map[1] + 0.5) <= 0.5:
+                        self.mobs[mob_number].state["health"] -= data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["data"]["weapon_info"]["damage"]
+                        self.mobs[mob_number].state["hurt"] = True
         # replace no health mobs to new mobs
         animal_ids = []
         for id in data.mob_data:
             if "animal" in data.mob_data[id]["tag"]:
                 animal_ids.append(id)
-        for mob_number in range(len(world.mobs)):
-            if world.mobs[mob_number].state["health"] <= 0:
+        for mob_number in range(len(self.mobs)):
+            if self.mobs[mob_number].state["health"] <= 0:
                 random_animal_id = random.choice(animal_ids)
-                world.mobs[mob_number] = Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])})
-                random_x = random.choice(range(world.settings["world_length"]))
-                top_y = world.settings["world_height"] - 1
+                self.mobs[mob_number] = Mob({"id": random_animal_id, "state": copy.deepcopy(data.mob_data[random_animal_id]["state"])})
+                random_x = random.choice(range(self.settings["world_length"]))
+                top_y = self.settings["world_height"] - 1
                 while top_y >= 0:
-                    if "mob_transparent" not in data.tile_data[world.map[random_x][top_y].id]["tag"]:
+                    if "mob_transparent" not in data.tile_data[self.map[random_x][top_y].id]["tag"]:
                         break
                     top_y -= 1
-                world.mobs[mob_number].state["health"] = data.mob_data[world.mobs[mob_number].id]["data"]["max_health"]
-                world.mobs[mob_number].state["coordinate"] = [float(random_x), float(top_y + 1)]
-                world.mobs[mob_number].state["movement"] = [0.0, 0.0]
+                self.mobs[mob_number].state["health"] = data.mob_data[self.mobs[mob_number].id]["data"]["max_health"]
+                self.mobs[mob_number].state["coordinate"] = [float(random_x), float(top_y + 1)]
+                self.mobs[mob_number].state["movement"] = [0.0, 0.0]
         # select backpack
-        world.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
-        world.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
+        self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
+        self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
         # move player
-        coordinate = world.move(world.player)
-        world.player.state["coordinate"][0] = coordinate[0]
-        world.player.state["coordinate"][1] = coordinate[1]
-        world.player.state["movement"][0] = coordinate[2]
-        world.player.state["movement"][1] = coordinate[3]
-        for mob_number in range(len(world.mobs)):
+        coordinate = self.move(self.player)
+        self.player.state["coordinate"][0] = coordinate[0]
+        self.player.state["coordinate"][1] = coordinate[1]
+        self.player.state["movement"][0] = coordinate[2]
+        self.player.state["movement"][1] = coordinate[3]
+        for mob_number in range(len(self.mobs)):
             if random.choice(range(16)) == 0:
-                world.mobs[mob_number].state["action"] = random.choice(data.mob_data[world.mobs[mob_number].id]["data"]["actions"])
-            if world.mob_on_ground(world.mobs[mob_number]):
-                if world.mobs[mob_number].state["action"] == "jump":
-                    world.mobs[mob_number].state["movement"][1] = world.settings["jump_speed"]
+                self.mobs[mob_number].state["action"] = random.choice(data.mob_data[self.mobs[mob_number].id]["data"]["actions"])
+            if self.mob_on_ground(self.mobs[mob_number]):
+                if self.mobs[mob_number].state["action"] == "jump":
+                    self.mobs[mob_number].state["movement"][1] = self.settings["jump_speed"]
                 else:
-                    world.mobs[mob_number].state["movement"][1] = 0.0
+                    self.mobs[mob_number].state["movement"][1] = 0.0
             else:
-                world.mobs[mob_number].state["movement"][1] += world.settings["gravity"]
-            if world.mobs[mob_number].state["action"] == "left":
-                world.mobs[mob_number].state["movement"][0] = -data.mob_data[world.mobs[mob_number].id]["data"]["speed"]
-            elif world.mobs[mob_number].state["action"] == "right":
-                world.mobs[mob_number].state["movement"][0] = data.mob_data[world.mobs[mob_number].id]["data"]["speed"]
+                self.mobs[mob_number].state["movement"][1] += self.settings["gravity"]
+            if self.mobs[mob_number].state["action"] == "left":
+                self.mobs[mob_number].state["movement"][0] = -data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
+            elif self.mobs[mob_number].state["action"] == "right":
+                self.mobs[mob_number].state["movement"][0] = data.mob_data[self.mobs[mob_number].id]["data"]["speed"]
             else:
-                world.mobs[mob_number].state["movement"][0] = 0.0
-            coordinate = world.move(world.mobs[mob_number])
-            world.mobs[mob_number].state["coordinate"][0] = coordinate[0]
-            world.mobs[mob_number].state["coordinate"][1] = coordinate[1]
-            world.mobs[mob_number].state["movement"][0] = coordinate[2]
-            world.mobs[mob_number].state["movement"][1] = coordinate[3]
+                self.mobs[mob_number].state["movement"][0] = 0.0
+            coordinate = self.move(self.mobs[mob_number])
+            self.mobs[mob_number].state["coordinate"][0] = coordinate[0]
+            self.mobs[mob_number].state["coordinate"][1] = coordinate[1]
+            self.mobs[mob_number].state["movement"][0] = coordinate[2]
+            self.mobs[mob_number].state["movement"][1] = coordinate[3]
         if key_is_just_down(_key_states, pygame.K_c):
             return "craft"
         return "do_nothing"
-    def crafts(world, _key_states: dict[int, str], _mouse_states: dict[str, Any]) -> str:
+    def crafts(self, _key_states: dict[int, str], _mouse_states: dict[str, Any]) -> str:
         # is it first time?
-        if "selected_recipe" not in world.player.state["temporary"]:
-            world.player.state["temporary"]["selected_recipe"] = 0
+        if "selected_recipe" not in self.player.state["temporary"]:
+            self.player.state["temporary"]["selected_recipe"] = 0
         # choose the recipe
-        world.player.state["temporary"]["selected_recipe"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
-        world.player.state["temporary"]["selected_recipe"] %= len(data.recipe_data)
-        world.player.state["temporary"]["successful_crafting"] = "none"
-        selected_recipe = world.player.state["temporary"]["selected_recipe"]
+        self.player.state["temporary"]["selected_recipe"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
+        self.player.state["temporary"]["selected_recipe"] %= len(data.recipe_data)
+        self.player.state["temporary"]["successful_crafting"] = "none"
+        selected_recipe = self.player.state["temporary"]["selected_recipe"]
         # craft
         if key_is_just_down(_key_states, pygame.K_SPACE):
             for material in range(len(data.recipe_data[selected_recipe]["from"])):
-                if world.player.count_item(Item(data.recipe_data[selected_recipe]["from"][material])) < data.recipe_data[selected_recipe]["from"][material]["count"]:
-                    world.player.state["temporary"]["successful_crafting"] = "false"
+                if self.player.count_item(Item(data.recipe_data[selected_recipe]["from"][material])) < data.recipe_data[selected_recipe]["from"][material]["count"]:
+                    self.player.state["temporary"]["successful_crafting"] = "false"
                     return "nothing"
             for material in range(len(data.recipe_data[selected_recipe]["from"])):
-                world.player.subtract_item(Item(data.recipe_data[selected_recipe]["from"][material]))
+                self.player.subtract_item(Item(data.recipe_data[selected_recipe]["from"][material]))
             for product in range(len(data.recipe_data[selected_recipe]["to"])):
-                world.player.state["temporary"]["successful_crafting"] = "true"
-                world.player.add_item(Item(data.recipe_data[selected_recipe]["to"][product]))
+                self.player.state["temporary"]["successful_crafting"] = "true"
+                self.player.add_item(Item(data.recipe_data[selected_recipe]["to"][product]))
         # exit
         if key_is_just_down(_key_states, pygame.K_c):
             return "world"

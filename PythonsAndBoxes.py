@@ -14,14 +14,6 @@ if __name__ != "__main__":
 
 
 print("Pythons&Boxes By Yangsy56302")
-window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
-window.fill((0, 0, 0))
-if settings["debug"] == True:
-    pygame.display.set_caption("Pythons&Boxes DEBUG_MODE")
-else:
-    pygame.display.set_caption("Pythons&Boxes")
-pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\PythonsAndBoxes.png").convert_alpha())
-screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)
 
 
 if settings["read_world"] == True and os.path.exists(settings["world_directory"]):
@@ -97,6 +89,8 @@ def display_world(_coordinate: tuple[float, float]) -> None:
             character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
             character_image_position = (int(character_number * 16 * settings["gui_scale"]), 0)
             screen.blit(character_image, character_image_position)
+
+
 def display_craft() -> None:
     if world.player.state["temporary"]["successful_crafting"] == "true":
         window.fill("#008000")

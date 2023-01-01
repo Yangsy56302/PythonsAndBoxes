@@ -16,6 +16,15 @@ settings = import_settings()
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
 import pygame
+pygame.init()
+window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
+window.fill((0, 0, 0))
+if settings["debug"] == True:
+    pygame.display.set_caption("Pythons&Boxes DEBUG_MODE")
+else:
+    pygame.display.set_caption("Pythons&Boxes")
+pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\PythonsAndBoxes.png").convert_alpha())
+screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)
 
 
 def print_info(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
@@ -39,17 +48,6 @@ def print_error(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n")
     return False
 
 
-pygame.init()
-window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
-window.fill((0, 0, 0))
-if settings["debug"] == True:
-    pygame.display.set_caption("Pythons&Boxes DEBUG_MODE")
-else:
-    pygame.display.set_caption("Pythons&Boxes")
-pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\main.png").convert_alpha())
-screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)
-
-
 class Data:
     tile_data: dict[str, Any]
     item_data: dict[str, Any]
@@ -57,34 +55,34 @@ class Data:
     font_data: dict[str, Any]
     recipe_data: list[dict[str, Any]]
     structure_data: dict[str, Any]
-    def load(world) -> None:
+    def load(self) -> None:
         print_info("Loading Tile Data...")
         file = open(".\\data\\tiles.json", mode="r")
-        world.tile_data = json.load(file)
+        self.tile_data = json.load(file)
         file.close()
         print_info("Loading Item Data...")
         file = open(".\\data\\items.json", mode="r")
-        world.item_data = json.load(file)
+        self.item_data = json.load(file)
         file.close()
         print_info("Loading Mob Data...")
         file = open(".\\data\\mobs.json", mode="r")
-        world.mob_data = json.load(file)
+        self.mob_data = json.load(file)
         file.close()
         print_info("Loading Font Data...")
         file = open(".\\data\\fonts.json", mode="r")
-        world.font_data = json.load(file)
+        self.font_data = json.load(file)
         file.close()
         print_info("Loading Recipe Data...")
         file = open(".\\data\\recipes.json", mode="r")
-        world.recipe_data = json.load(file)
+        self.recipe_data = json.load(file)
         file.close()
         print_info("Loading Structure Data...")
         file = open(".\\data\\structures.json", mode="r")
-        world.structure_data = json.load(file)
+        self.structure_data = json.load(file)
         file.close()
-    def __init__(world) -> None:
+    def __init__(self) -> None:
         print_info("Loading Data...")
-        world.load()
+        self.load()
 data = Data()
 
 
@@ -93,27 +91,27 @@ class Assets:
     item_images: dict[str, Any]
     mob_images: dict[str, Any]
     font_images: dict[str, Any]
-    def load(world) -> None:
-        world.tile_images = {}
-        world.item_images = {}
-        world.mob_images = {}
-        world.font_images = {}
+    def load(self) -> None:
+        self.tile_images = {}
+        self.item_images = {}
+        self.mob_images = {}
+        self.font_images = {}
         print_info("Loading Tile Images...")
         for id in data.tile_data:
-            world.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
+            self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
         print_info("Loading Item Images...")
         for id in data.item_data:
-            world.item_images[id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()
+            self.item_images[id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()
         print_info("Loading Mob Images...")
         for id in data.mob_data:
-            world.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
+            self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
         print_info("Loading Font Images...")
         font_image = pygame.image.load(".\\assets\\images\\fonts\\default.png").convert_alpha()
         for id in data.font_data:
-            world.font_images[id] = font_image.subsurface(((data.font_data[id]["coordinate"][0] * 16, data.font_data[id]["coordinate"][1] * 16), (16, 16)))
-    def __init__(world) -> None:
+            self.font_images[id] = font_image.subsurface(((data.font_data[id]["coordinate"][0] * 16, data.font_data[id]["coordinate"][1] * 16), (16, 16)))
+    def __init__(self) -> None:
         print_info("Loading Assets...")
-        world.load()
+        self.load()
 assets = Assets()
 
 
@@ -139,7 +137,7 @@ def change_image_color(_image: pygame.Surface, _color: Optional[pygame.Color] = 
     return return_image
 
 
-def get_mouse_states(_events, _states: dict[str, Any]) -> dict[str, Any]:
+def get_mouse_states(_events: Any, _states: dict[str, Any]) -> dict[str, Any]:
     states = _states
     # add the underline to the pressed button
     button_name = ["left", "middle", "right", "scroll_up", "scroll_down"]
@@ -175,7 +173,7 @@ def get_mouse_states(_events, _states: dict[str, Any]) -> dict[str, Any]:
     return states
 
 
-def get_key_states(_events, _states: dict[int, str]) -> dict[int, str]:
+def get_key_states(_events: Any, _states: dict[int, str]) -> dict[int, str]:
     states = _states
     for state in states:
         if "_" not in states[state]:
@@ -188,7 +186,7 @@ def get_key_states(_events, _states: dict[int, str]) -> dict[int, str]:
     return states
 
 
-def key_is_down(_states: dict, _key) -> bool:
+def key_is_down(_states: dict, _key: Any) -> bool:
     if _key in _states:
         if "down" in _states[_key]:
             return True
@@ -198,7 +196,7 @@ def key_is_down(_states: dict, _key) -> bool:
         return False
 
 
-def key_is_just_down(_states: dict, _key) -> bool:
+def key_is_just_down(_states: dict, _key: Any) -> bool:
     if _key in _states:
         if _states[_key] == "down":
             return True
@@ -208,7 +206,7 @@ def key_is_just_down(_states: dict, _key) -> bool:
         return False
 
 
-def key_is_up(_states: dict, _key) -> bool:
+def key_is_up(_states: dict, _key: Any) -> bool:
     if _key in _states:
         if "up" in _states[_key]:
             return True
@@ -218,7 +216,7 @@ def key_is_up(_states: dict, _key) -> bool:
         return False
 
 
-def key_is_just_up(_states: dict, _key) -> bool:
+def key_is_just_up(_states: dict, _key: Any) -> bool:
     if _key in _states:
         if _states[_key] == "up":
             return True
