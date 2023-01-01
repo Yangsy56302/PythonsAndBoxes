@@ -1,3 +1,4 @@
+from typing import Any, Optional, Literal
 import sys
 import os
 import math
@@ -18,7 +19,7 @@ print("Thank you for playing Pythons&Boxes!")
 print("This game uses Pygame to build. Support them!")
 
 
-def import_settings() -> dict:
+def import_settings() -> dict[str, Any]:
     file = open(".\\data\\settings.json", mode="r")
     settings = json.load(file)
     file.close()
@@ -26,21 +27,21 @@ def import_settings() -> dict:
 settings = import_settings()
 
 
-def print_info(*_values, _sep: str | None = " ", _end: str | None = "\n") -> bool:
+def print_info(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
     if "info" in settings["print_type"]:
         print("[INFO]", *_values, sep=_sep, end=_end)
         return True
     return False
 
 
-def print_warning(*_values, _sep: str | None = " ", _end: str | None = "\n") -> bool:
+def print_warning(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
     if "warning" in settings["print_type"]:
         print("[WARNING]", *_values, sep=_sep, end=_end)
         return True
     return False
 
 
-def print_error(*_values, _sep: str | None = " ", _end: str | None = "\n") -> bool:
+def print_error(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
     if "error" in settings["print_type"]:
         print("[ERROR]", *_values, sep=_sep, end=_end)
         return True
@@ -70,12 +71,12 @@ screen = pygame.Surface((settings["window_length"], settings["window_height"]), 
 
 
 class Data:
-    tile_data: dict = None
-    item_data: dict = None
-    mob_data: dict = None
-    font_data: dict = None
-    recipe_data: dict = None
-    structure_data: dict = None
+    tile_data: dict[str, Any]
+    item_data: dict[str, Any]
+    mob_data: dict[str, Any]
+    font_data: dict[str, Any]
+    recipe_data: list[dict[str, Any]]
+    structure_data: dict[str, Any]
     def load(self) -> None:
         file = open(".\\data\\tiles.json", mode="r")
         self.tile_data = json.load(file)
@@ -103,10 +104,10 @@ data = Data()
 
 
 class Assets:
-    tile_images: dict = None
-    item_images: dict = None
-    mob_images: dict = None
-    font_images: dict = None
+    tile_images: dict[str, Any]
+    item_images: dict[str, Any]
+    mob_images: dict[str, Any]
+    font_images: dict[str, Any]
     def load(self) -> None:
         self.tile_images = {}
         self.item_images = {}
@@ -145,14 +146,14 @@ assets = Assets()
 
 
 class Object:
-    id: str = None
-    state: dict = None
+    id: str
+    state: dict[str, Any]
     def set_to_json(self) -> dict:
         return {"id": self.id, "state": self.state}
-    def get_from_json(self, _json: dict) -> None:
+    def get_from_json(self, _json: dict[str, Any]) -> None:
         self.id = _json["id"]
         self.state = _json["state"]
-    def __init__(self, _json: dict) -> None:
+    def __init__(self, _json: dict[str, Any]) -> None:
         self.get_from_json(_json)
 
 
@@ -161,12 +162,12 @@ class Tile(Object):
 
 
 class Structure(Object):
-    def set_to_json(self) -> dict:
+    def set_to_json(self) -> dict[str, Any]:
         return_value = {"id": self.id, "state": {"keys": self.keys, "tiles": self.tiles}}
         for key in self.keys:
             return_value["state"]["keys"][key] = self.state["keys"][key].set_to_json()
         return return_value
-    def get_from_json(self, _json: dict) -> None:
+    def get_from_json(self, _json: dict[str, Any]) -> None:
         self.id = _json["id"]
         self.state = _json["state"]
         for key in self.keys:
@@ -174,10 +175,10 @@ class Structure(Object):
 
 
 class Item(Object):
-    count: int = None
-    def set_to_json(self) -> dict:
+    count: int
+    def set_to_json(self) -> dict[str, Any]:
         return {"id": self.id, "count": self.count, "state": self.state}
-    def get_from_json(self, _json: dict) -> None:
+    def get_from_json(self, _json: dict[str, Any]) -> None:
         self.id = _json["id"]
         self.count = _json["count"]
         self.state = _json["state"]
@@ -238,19 +239,62 @@ class Mob(Object):
 
 
 class Player(Mob):
-    def set_to_json(self) -> dict:
+    def set_to_json(self) -> dict[str, Any]:
         return_value = {"id": self.id, "state": self.state}
         for slot_number in range(len(self.state["backpack"])):
             return_value["state"]["backpack"][slot_number] = self.state["backpack"][slot_number].set_to_json()
         return return_value
-    def get_from_json(self, _json: dict) -> None:
+    def get_from_json(self, _json: dict[str, Any]) -> None:
         self.id = _json["id"]
         self.state = _json["state"]
         for slot_number in range(len(_json["state"]["backpack"])):
             self.state["backpack"][slot_number] = Item(_json["state"]["backpack"][slot_number])
 
 
-def get_mouse_states(_events, _states: dict):
+def tint_image(_image: pygame.Surface, _color: Optional[pygame.Color] = pygame.Color(255, 255, 255, 255)) -> pygame.Surface:
+    return_image = _image.copy()
+    for x in range(_image.get_width()):
+        for y in range(_image.get_height()):
+            old_color = pygame.Color(_image.get_at((x, y)))
+            new_color = pygame.Color(int((old_color.r * (1 - (_color.a / 255))) + (_color.r * (_color.a / 255))),
+                                     int((old_color.g * (1 - (_color.a / 255))) + (_color.g * (_color.a / 255))),
+                                     int((old_color.b * (1 - (_color.a / 255))) + (_color.b * (_color.a / 255))), old_color.a)
+            return_image.set_at((x, y), new_color)
+    return return_image
+
+
+def change_image_color(_image: pygame.Surface, _color: Optional[pygame.Color] = pygame.Color(255, 255, 255, 255)) -> pygame.Surface:
+    return_image = _image.copy()
+    for x in range(_image.get_width()):
+        for y in range(_image.get_height()):
+            old_color = pygame.Color(_image.get_at((x, y)))
+            new_color = pygame.Color(_color.r, _color.g, _color.b, int(_color.a * old_color.a / 255))
+            return_image.set_at((x, y), new_color)
+    return return_image
+
+
+class Character:
+    character: str
+    state: dict[str, Any]
+    def set_default(self) -> None:
+        self.state.setdefault("color", (255, 255, 255, 255))
+    def __init__(self, _character: str, _state: Optional[dict[str, Any]] = {}) -> None:
+        self.character = _character
+        self.state = _state
+        self.set_default()
+    def display(self, _position: tuple[int, int], _scale: Optional[int] = 1) -> None:
+        character_image_unscaled = assets.font_images[self.character]
+        character_image_untinted = pygame.transform.scale(character_image_unscaled, (16 * _scale, 16 * _scale))
+        character_image = change_image_color(character_image_untinted, pygame.Color(self.state["color"]))
+        screen.blit(character_image, _position)
+
+
+def display_text(_text: list[Character], _position: tuple[int, int], _scale: Optional[int] = 1) -> None:
+    for index in range(len(_text)):
+        _text[index].display((_position[0] + (index * _scale * 16), _position[1]))
+
+
+def get_mouse_states(_events, _states: dict[str, Any]) -> dict[str, Any]:
     states = _states
     # add the underline to the pressed button
     button_name = ["left", "middle", "right", "scroll_up", "scroll_down"]
@@ -286,7 +330,7 @@ def get_mouse_states(_events, _states: dict):
     return states
 
 
-def get_key_states(_events, _states: dict) -> dict:
+def get_key_states(_events, _states: dict[int, str]) -> dict[int, str]:
     states = _states
     for state in states:
         if "_" not in states[state]:
@@ -340,11 +384,11 @@ def key_is_just_up(_states: dict, _key) -> bool:
 
 
 class World:
-    settings: dict = None
-    map: list = None
-    player: Player = None
-    mobs: list = None
-    def set_to_json(self) -> dict:
+    settings: dict[str, Any]
+    map: list[list[Tile]]
+    player: Player
+    mobs: list[Mob]
+    def set_to_json(self) -> dict[str, Any]:
         json_map = []
         for x in range(self.settings["world_length"]):
             json_map.append([])
@@ -354,7 +398,7 @@ class World:
         for mob_number in range(len(self.mobs)):
             json_mobs.append(self.mobs[mob_number].set_to_json())
         return {"map": json_map, "player": self.player.set_to_json(), "mobs": json_mobs, "settings": self.settings}
-    def get_from_json(self, _json: dict) -> None:
+    def get_from_json(self, _json: dict[str, Any]) -> None:
         self.settings = _json["settings"]
         self.map = []
         for x in range(self.settings["world_length"]):
@@ -364,9 +408,9 @@ class World:
         self.player = Player(_json["player"])
         for mob_number in range(len(_json.mobs)):
             self.mobs.append(Mob(_json["mobs"][mob_number]))
-    def valid_coordinate(self, _coordinate: tuple) -> bool:
+    def valid_coordinate(self, _coordinate: tuple[int, int]) -> bool:
         return _coordinate[0] >= 0 and _coordinate[0] < self.settings["world_length"] and _coordinate[1] >= 0 and _coordinate[1] < self.settings["world_height"]
-    def build_structure(self, _coordinate: tuple, _id: str) -> bool:
+    def build_structure(self, _coordinate: tuple[int, int], _id: str) -> bool:
         structure = data.structure_data[_id]
         length = len(structure["tiles"][0])
         height = len(structure["tiles"])
@@ -380,7 +424,7 @@ class World:
                         self.map[map_x][map_y] = Tile(structure["keys"][structure["tiles"][structure_y][structure_x]])
                         return_value = True
         return return_value
-    def noise(self) -> list:
+    def noise(self) -> list[int]:
         random.seed(self.settings["seed"])
         terrain = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
         offset = [0 for i in range(self.settings["world_length"])]
@@ -403,7 +447,7 @@ class World:
         for x in range(self.settings["world_length"]):
             terrain[x] = int(terrain[x])
         return terrain
-    def cave(self, _coordinate: tuple, _length: int) -> list:
+    def cave(self, _coordinate: tuple[int, int], _length: int) -> list[tuple[float, float]]:
         # generate cave
         return_value = []
         angle = random.random()
@@ -416,7 +460,7 @@ class World:
             coordinate = (coordinate[0] + math.cos(angle * 2 * math.pi), coordinate[1] + math.sin(angle * 2 * math.pi))
             return_value.append(copy.deepcopy(coordinate))
         return return_value
-    def create(self, _settings: dict) -> None:
+    def create(self, _settings: dict[str, Any]) -> None:
         # create new world
         self.settings = _settings
         self.map = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
@@ -487,7 +531,7 @@ class World:
             self.mobs[mob_number].state["movement"] = [0.0, 0.0]
         print_progress_bar(1, 1, "Creating New World")
         print_info("Done.")
-    def __init__(self, _json: dict) -> None:
+    def __init__(self, _json: dict[str, Any]) -> None:
         if _json == {}:
             self.create(settings["default_world_settings"])
         else:
@@ -501,7 +545,7 @@ class World:
                 if "mob_transparent" not in data.tile_data[self.map[coordinate[0]][coordinate[1]].id]["tag"]:
                     return True
         return False
-    def move(self, _mob) -> tuple:
+    def move(self, _mob) -> tuple[float, float, float, float]:
         if _mob.state["movement"][0] == 0 and _mob.state["movement"][1] == 0:
             return (_mob.state["coordinate"][0], _mob.state["coordinate"][1], 0.0, 0.0)
         # get _mob's coordinate
@@ -559,11 +603,11 @@ class World:
         return_value[0] = _mob.state["coordinate"][0] + list_x[-1]
         return_value[1] = _mob.state["coordinate"][1] + list_y[-1]
         return tuple(return_value)
-    def mouse_to_map(self, _mouse_position: tuple, _world_coordinate: tuple) -> tuple:
+    def mouse_to_map(self, _mouse_position: tuple[int, int], _world_coordinate: tuple[float, float]) -> tuple[float, float]:
         x_coordinate = -((settings["window_length"] / 2 - _mouse_position[0]) / 16 / settings["map_scale"]) + 0.5 + _world_coordinate[0]
         y_coordinate = ((settings["window_height"] / 2 - _mouse_position[1]) / 16 / settings["map_scale"]) + 0.5 + _world_coordinate[1]
         return (x_coordinate, y_coordinate)
-    def break_tile(self, _coordinate: tuple) -> bool:
+    def break_tile(self, _coordinate: tuple[int, int]) -> bool:
         # is this coordinate valid?
         if not self.valid_coordinate(_coordinate):
             return False
@@ -591,7 +635,7 @@ class World:
         # break tile
         self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile({"id": "air", "state": {}})
         return True
-    def place_tile(self, _coordinate: tuple) -> bool:
+    def place_tile(self, _coordinate: tuple[int, int]) -> bool:
         # is this coordinate valid?
         if not self.valid_coordinate(_coordinate):
             return False
@@ -610,7 +654,7 @@ class World:
         # set tile
         self.map[int(_coordinate[0])][int(_coordinate[1])] = Tile(data.item_data[current_item.id]["data"]["to_tile"])
         return True
-    def tick(self, _key_states: dict, _mouse_states: dict) -> str:
+    def tick(self, _key_states: dict[int, str], _mouse_states: dict[str, Any]) -> str:
         # quit game
         if key_is_just_down(_key_states, pygame.K_DELETE):
             return "quit"
@@ -651,12 +695,16 @@ class World:
                             if "replaceable" in data.tile_data[self.map[x][y - 1].id]["tag"]:
                                 self.map[x][y - 1] = self.map[x][y]
                                 self.map[x][y] = Tile({"id": "air", "state": {}})
-        # attack
+        # remove mob hurt effect
+        for mob_number in range(len(self.mobs)):
+            self.mobs[mob_number].state["hurt"] = False
+        # attack mobs
         if key_is_just_down(_mouse_states, "left"):
             if "weapon" in data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["tag"]:
                 for mob_number in range(len(self.mobs)):
-                    if abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5 and abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0]) <= 0.5:
+                    if abs(self.mobs[mob_number].state["coordinate"][0] - mouse_in_map[0] + 0.5) <= 0.5 and abs(self.mobs[mob_number].state["coordinate"][1] - mouse_in_map[1] + 0.5) <= 0.5:
                         self.mobs[mob_number].state["health"] -= data.item_data[self.player.state["backpack"][self.player.state["selected_slot"]].id]["data"]["weapon_info"]["damage"]
+                        self.mobs[mob_number].state["hurt"] = True
         # replace no health mobs to new mobs
         animal_ids = []
         for id in data.mob_data:
@@ -708,7 +756,7 @@ class World:
         if key_is_just_down(_key_states, pygame.K_c):
             return "craft"
         return "do_nothing"
-    def crafts(self, _key_states: dict, _mouse_states: dict) -> str:
+    def crafts(self, _key_states: dict[int, str], _mouse_states: dict[str, Any]) -> str:
         # is it first time?
         if "selected_recipe" not in self.player.state["temporary"]:
             self.player.state["temporary"]["selected_recipe"] = 0
@@ -732,7 +780,7 @@ class World:
         if key_is_just_down(_key_states, pygame.K_c):
             return "world"
         return "nothing"
-    def display_world(self, _coordinate: tuple) -> None:
+    def display_world(self, _coordinate: tuple[float, float]) -> None:
         window.fill("#80C0FF")
         screen.fill("#00000000")
         # display map
@@ -756,6 +804,8 @@ class World:
         for mob_number in range(len(self.mobs)):
             mob_image_unscaled = assets.mob_images[self.mobs[mob_number].id]
             mob_image = pygame.transform.scale(mob_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
+            if self.mobs[mob_number].state.get("hurt", False):
+                mob_image = tint_image(mob_image, pygame.Color(255, 0, 0, 128))
             mob_image_position = (int(((self.mobs[mob_number].state["coordinate"][0] - _coordinate[0]) * 16 - 8) * settings["map_scale"]) + settings["window_length"] / 2,
                                   int(((self.mobs[mob_number].state["coordinate"][1] - _coordinate[1]) * -16 - 8) * settings["map_scale"]) + settings["window_height"] / 2)
             if mob_image_position[0] > -16 * settings["map_scale"] and mob_image_position[0] < settings["window_length"]:
@@ -789,6 +839,7 @@ class World:
             character_image_position = (int((character_number * 16 - len(item_info) * 8) * settings["gui_scale"] + settings["window_length"] / 2),
                                         int(settings["window_height"] - 32 * settings["gui_scale"]))
             screen.blit(character_image, character_image_position)
+        # display debug screen
         if settings["debug"] == True:
             player_coordinate = str(int(self.player.state["coordinate"][0])) + "," + str(int(self.player.state["coordinate"][1]))
             for character_number in range(len(player_coordinate)):
@@ -796,7 +847,7 @@ class World:
                 character_image = pygame.transform.scale(character_image_unscaled, (16 * settings["gui_scale"], 16 * settings["gui_scale"]))
                 character_image_position = (int(character_number * 16 * settings["gui_scale"]), 0)
                 screen.blit(character_image, character_image_position)
-    def display_craft(self):
+    def display_craft(self) -> None:
         if self.player.state["temporary"]["successful_crafting"] == "true":
             window.fill("#008000")
         elif self.player.state["temporary"]["successful_crafting"] == "false":
@@ -856,6 +907,14 @@ else:
     world = World({})
 
 
+chr_1 = Character("1")
+chr_2 = Character("2", {"color": (255, 255, 255, 255)})
+chr_3 = Character("3", {"color": (255, 255, 255, 128)})
+chr_4 = Character("4", {"color": (0, 255, 0, 255)})
+chr_5 = Character("5", {"color": (0, 128, 0, 128)})
+text = [chr_1, chr_2, chr_3, chr_4, chr_5]
+
+
 return_value = "do_nothing"
 key_states = {}
 mouse_states = {"position": (0, 0), "movement": (0, 0), "left": "up", "middle": "up", "right": "up", "scroll_up": 0, "scroll_down": 0}
@@ -875,6 +934,7 @@ while return_value != "quit":
         world.display_craft()
         if return_value == "world":
             gui = "world"
+    display_text(text, (128, 128))
     window.blit(screen, (0, 0))
     pygame.display.flip()
     stop_tick_time = time.time()
