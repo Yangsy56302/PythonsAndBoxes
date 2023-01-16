@@ -8,6 +8,7 @@
         },
         "state": {
             "temporary": {},
+            "falling_time": 0,
             "selected_slot": 0,
             "backpack": [
                 {"id": "flint_sword", "count": 1, "state": {}},
@@ -37,7 +38,8 @@
             "speed": 0.5
         },
         "state": {
-            "temporary": {}
+            "temporary": {},
+            "falling_time": 0
         },
         "tag": []
     },
@@ -50,6 +52,7 @@
         },
         "state": {
             "temporary": {},
+            "falling_time": 0,
             "action": "no_action"
         },
         "tag": ["animal"]
@@ -63,6 +66,7 @@
         },
         "state": {
             "temporary": {},
+            "falling_time": 0,
             "action": "no_action"
         },
         "tag": ["animal"]

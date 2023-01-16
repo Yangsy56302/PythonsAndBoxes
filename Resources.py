@@ -11,38 +11,57 @@ def import_settings() -> dict[str, Any]:
     return_value = json.load(file)
     file.close()
     return return_value
-settings = import_settings()
+default_settings = import_settings()
+settings = copy.deepcopy(default_settings)
 
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
 import pygame
 pygame.init()
-window = pygame.display.set_mode((settings["window_length"], settings["window_height"]))
-window.fill((0, 0, 0))
-if settings["debug"] == True:
-    pygame.display.set_caption("Pythons&Boxes DEBUG_MODE")
-else:
-    pygame.display.set_caption("Pythons&Boxes")
+pygame_window = pygame.display.set_mode((default_settings["pygame_window_length"], default_settings["pygame_window_height"]))
+pygame_window.fill((0, 0, 0))
+pygame.display.set_caption("Pythons&Boxes")
 pygame.display.set_icon(pygame.image.load(".\\assets\\images\\icons\\PythonsAndBoxes.png").convert_alpha())
-screen = pygame.Surface((settings["window_length"], settings["window_height"]), pygame.SRCALPHA)
+pygame.display.flip()
+screen = pygame.Surface((default_settings["pygame_window_length"], default_settings["pygame_window_height"]), pygame.SRCALPHA)
+
+
+def exit_0() -> None:
+    pygame.quit()
+    os._exit(0)
+
+
+def exit_1() -> None:
+    pygame.quit()
+    os._exit(1)
+
+
+import tkinter
+tkinter_window = tkinter.Tk()
+tkinter_window.geometry("512x384")
+tkinter_window.resizable(False, False)
+tkinter_window.title("Pythons&Boxes")
+tkinter_window.iconbitmap(".\\assets\\images\\icons\\PythonsAndBoxes.ico")
+tkinter_window.protocol('WM_DELETE_WINDOW', exit_0)
+tkinter_window.update()
 
 
 def print_info(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
-    if "info" in settings["print_type"]:
+    if "info" in default_settings["print_type"]:
         print("[INFO]", *_values, sep=_sep, end=_end)
         return True
     return False
 
 
 def print_warning(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
-    if "warning" in settings["print_type"]:
+    if "warning" in default_settings["print_type"]:
         print("[WARNING]", *_values, sep=_sep, end=_end)
         return True
     return False
 
 
 def print_error(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n") -> bool:
-    if "error" in settings["print_type"]:
+    if "error" in default_settings["print_type"]:
         print("[ERROR]", *_values, sep=_sep, end=_end)
         return True
     return False

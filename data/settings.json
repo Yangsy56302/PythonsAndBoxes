@@ -1,14 +1,14 @@
 {
     "debug": false,
-    "window_length": 1024,
-    "window_height": 768,
+    "pygame_window_length": 1024,
+    "pygame_window_height": 768,
     "default_map_scale": 1,
     "gui_scale": 2,
     "print_type": ["info", "warning", "error"],
     "read_world": false,
     "write_world": false,
     "world_directory": ".\\world\\world.json",
-    "default_world_settings": {
+    "world_settings": {
         "seed": 0,
         "world_length": 4096,
         "world_height": 256,

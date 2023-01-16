@@ -1,6 +1,6 @@
 # Pythons&Boxes
 
-**Pythons&Boxes** is a sandbox game using Python for code, like its *temp* name.
+**Pythons&Boxes** is a sandbox game using Python for code, like its name.
 
 ## Game info
 
