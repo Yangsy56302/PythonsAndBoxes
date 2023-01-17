@@ -11,7 +11,9 @@
             "unbreakable",
             "replaceable",
             "mob_transparent",
+            "liquid_transparent",
             "light_transparent",
+            "display_transparent",
             "cant_be_support_tile"
         ]
     },
@@ -141,7 +143,8 @@
             "mob_transparent",
             "light_transparent",
             "need_support_tile",
-            "cant_be_support_tile"
+            "cant_be_support_tile",
+            "liquid_breakable"
         ]
     },
     "log": {
@@ -170,7 +173,8 @@
         "state": {},
         "tag": [
             "mob_transparent",
-            "light_transparent"
+            "light_transparent",
+            "liquid_breakable"
         ]
     },
     "wood": {
@@ -208,7 +212,8 @@
             "mob_transparent",
             "light_transparent",
             "need_support_tile",
-            "cant_be_support_tile"
+            "cant_be_support_tile",
+            "liquid_breakable"
         ]
     },
     "coal_ore": {

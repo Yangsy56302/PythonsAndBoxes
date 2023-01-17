@@ -1,0 +1,20 @@
+{
+    "air": {
+        "name": "Air",
+        "data": {},
+        "state": {},
+        "tag": ["display_transparent"]
+    },
+    "test_liquid": {
+        "name": "Test Liquid",
+        "data": {},
+        "state": {},
+        "tag": []
+    },
+    "water": {
+        "name": "Water",
+        "data": {},
+        "state": {},
+        "tag": []
+    }
+}

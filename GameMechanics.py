@@ -21,6 +21,10 @@ class Tile(Object):
     pass
 
 
+class Liquid(Object):
+    pass
+
+
 class Structure(Object):
     def set_to_json(self) -> dict[str, Any]:
         return_value = {"id": self.id, "state": {"keys": self.keys, "tiles": self.tiles}}
@@ -160,6 +164,7 @@ def display_text(_text: list[Character], _position: tuple[int, int], _scale: Opt
 class World:
     settings: dict[str, Any]
     tiles: list[list[Tile]]
+    liquids: list[list[Liquid]]
     player: Player
     mobs: list[Mob]
     def set_to_json(self) -> dict[str, Any]:
@@ -200,7 +205,7 @@ class World:
                         return_value = True
         return return_value
     def noise(self) -> list[int]:
-        random.seed(self.settings["seed"])
+        random.seed(int(self.settings["seed"].get()))
         terrain = [self.settings["world_height"] / 2 for i in range(self.settings["world_length"])]
         offset = [0 for i in range(self.settings["world_length"])]
         step_length = 1
@@ -238,49 +243,57 @@ class World:
     def create(self, _settings: dict[str, Any]) -> None:
         # create new world
         self.settings = _settings
+        random.seed(int(self.settings["seed"].get()))
         print_info("Generating Terrain...")
         self.tiles = [[Tile({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
+        self.liquids = [[Liquid({"id": "air", "state": {}}) for y in range(self.settings["world_height"])] for x in range(self.settings["world_length"])]
         terrain = self.noise()
         for x in range(self.settings["world_length"]):
             dirt_thick = random.choice(range(3, 6))
-            for y in range(terrain[x]):
+            for y in range(self.settings["world_height"]):
                 if not self.valid_coordinate((x, y)):
                     break
-                if terrain[x] - y == 1:
-                    self.tiles[x][y] = Tile({"id": "grassy_soil", "state": {}})
-                    random_number = random.choice(range(64))
-                    if random_number == 0:
-                        if self.valid_coordinate((x, y + 1)):
-                            self.tiles[x][y + 1] = Tile({"id": "sapling", "state": {}})
-                    elif random_number == 1:
-                        self.build_structure((x, y), "tree_3")
-                    elif random_number == 2:
-                        self.build_structure((x, y), "tree_4")
-                    elif random_number == 3:
-                        self.build_structure((x, y), "tree_5")
-                    elif random_number <= 16:
-                        if self.valid_coordinate((x, y + 1)):
-                            self.tiles[x][y + 1] = Tile({"id": "grass", "state": {}})
-                elif terrain[x] - y <= dirt_thick:
-                    random_number = random.choice(range(16))
-                    if random_number == 0:
-                        self.tiles[x][y] = Tile({"id": "gravel", "state": {}})
+                if y < terrain[x]:
+                    if terrain[x] - y == 1:
+                        if y >= self.settings["world_height"] / 2:
+                            self.tiles[x][y] = Tile({"id": "grassy_soil", "state": {}})
+                            random_number = random.choice(range(64))
+                            if random_number == 0:
+                                if self.valid_coordinate((x, y + 1)):
+                                    self.tiles[x][y + 1] = Tile({"id": "sapling", "state": {}})
+                            elif random_number == 1:
+                                self.build_structure((x, y), "tree_3")
+                            elif random_number == 2:
+                                self.build_structure((x, y), "tree_4")
+                            elif random_number == 3:
+                                self.build_structure((x, y), "tree_5")
+                            elif random_number <= 16:
+                                if self.valid_coordinate((x, y + 1)):
+                                    self.tiles[x][y + 1] = Tile({"id": "grass", "state": {}})
+                        else:
+                            self.tiles[x][y] = Tile({"id": "soil", "state": {}})
+                    elif terrain[x] - y <= dirt_thick:
+                        random_number = random.choice(range(16))
+                        if random_number == 0:
+                            self.tiles[x][y] = Tile({"id": "gravel", "state": {}})
+                        else:
+                            self.tiles[x][y] = Tile({"id": "soil", "state": {}})
                     else:
-                        self.tiles[x][y] = Tile({"id": "soil", "state": {}})
-                else:
-                    random_number = random.choice(range(int((y + self.settings["world_height"]) / 2)))
-                    if random_number == 0:
-                        self.tiles[x][y] = Tile({"id": "coal_ore", "state": {}})
-                    elif random_number == 1:
-                        self.tiles[x][y] = Tile({"id": "copper_ore", "state": {}})
-                    elif random_number == 2:
-                        self.tiles[x][y] = Tile({"id": "silver_ore", "state": {}})
-                    elif random_number == 3:
-                        self.tiles[x][y] = Tile({"id": "iron_ore", "state": {}})
-                    elif random_number == 4:
-                        self.tiles[x][y] = Tile({"id": "gold_ore", "state": {}})
-                    else:
-                        self.tiles[x][y] = Tile({"id": "stone", "state": {}})
+                        random_number = random.choice(range(int((y + self.settings["world_height"]) / 2)))
+                        if random_number == 0:
+                            self.tiles[x][y] = Tile({"id": "coal_ore", "state": {}})
+                        elif random_number == 1:
+                            self.tiles[x][y] = Tile({"id": "copper_ore", "state": {}})
+                        elif random_number == 2:
+                            self.tiles[x][y] = Tile({"id": "silver_ore", "state": {}})
+                        elif random_number == 3:
+                            self.tiles[x][y] = Tile({"id": "iron_ore", "state": {}})
+                        elif random_number == 4:
+                            self.tiles[x][y] = Tile({"id": "gold_ore", "state": {}})
+                        else:
+                            self.tiles[x][y] = Tile({"id": "stone", "state": {}})
+                if y <= self.settings["world_height"] / 2 and "liquid_transparent" in data.tile_data[self.tiles[x][y].id]["tag"]:
+                    self.liquids[x][y] = Liquid({"id": "water", "state": {"source": True}})
         print_info("Generating Cave...")
         for i in range(int(self.settings["world_length"] / 4)):
             cave_line = self.cave((random.choice(range(self.settings["world_length"])), random.choice(range(self.settings["world_height"]))), random.choice(range(16, 64)))
@@ -458,24 +471,84 @@ class World:
         # select backpack
         self.player.state["selected_slot"] += _mouse_states["scroll_down"] - _mouse_states["scroll_up"]
         self.player.state["selected_slot"] %= data.mob_data["player"]["data"]["max_slot"]
-        # break or place tile
+        # map changes
         mouse_in_map = self.mouse_to_map(_mouse_states["position"], tuple(self.player.state["coordinate"]))
         if key_is_down(_mouse_states, "left"):
             self.break_tile(mouse_in_map)
         if key_is_down(_mouse_states, "right"):
             self.place_tile(mouse_in_map)
-        for x in range(int(self.player.state["coordinate"][0]) - 64, int(self.player.state["coordinate"][0]) + 65):
-            for y in range(int(self.player.state["coordinate"][1]) - 64, int(self.player.state["coordinate"][1]) + 65):
+        new_tiles = copy.deepcopy(self.tiles)
+        print("copy good")
+        new_liquids = copy.deepcopy(self.liquids)
+        loading_range = 64
+        for x in range(int(self.player.state["coordinate"][0]) - loading_range, int(self.player.state["coordinate"][0]) + loading_range + 1):
+            for y in range(int(self.player.state["coordinate"][1]) - loading_range, int(self.player.state["coordinate"][1]) + loading_range + 1):
                 if self.valid_coordinate((x, y)):
                     if "need_support_tile" in data.tile_data[self.tiles[x][y].id]["tag"]:
                         if self.valid_coordinate((x, y - 1)):
                             if "cant_be_support_tile" in data.tile_data[self.tiles[x][y - 1].id]["tag"]:
-                                self.tiles[x][y] = Tile({"id": "air", "state": {}})
+                                new_tiles[x][y] = Tile({"id": "air", "state": {}})
                     if "falling_tile" in data.tile_data[self.tiles[x][y].id]["tag"]:
                         if self.valid_coordinate((x, y - 1)):
                             if "replaceable" in data.tile_data[self.tiles[x][y - 1].id]["tag"]:
-                                self.tiles[x][y - 1] = self.tiles[x][y]
-                                self.tiles[x][y] = Tile({"id": "air", "state": {}})
+                                new_tiles[x][y - 1] = self.tiles[x][y]
+                                new_tiles[x][y] = Tile({"id": "air", "state": {}})
+        for x in range(int(self.player.state["coordinate"][0]) - loading_range, int(self.player.state["coordinate"][0]) + loading_range + 1):
+            for y in range(int(self.player.state["coordinate"][1]) - loading_range, int(self.player.state["coordinate"][1]) + loading_range + 1):
+                if self.valid_coordinate((x, y)):
+                    if self.liquids[x][y].id != "air":
+                        if "liquid_transparent" not in data.tile_data[self.tiles[x][y].id]["tag"]:
+                            new_liquids[x][y] = Liquid({"id": "air", "state": {}})
+                        if "liquid_breakable" in data.tile_data[self.tiles[x][y].id]["tag"]:
+                            new_tiles[x][y] = Tile({"id": "air", "state": {}})
+        for x in range(int(self.player.state["coordinate"][0]) - loading_range, int(self.player.state["coordinate"][0]) + loading_range + 1):
+            for y in range(int(self.player.state["coordinate"][1]) - loading_range, int(self.player.state["coordinate"][1]) + loading_range + 1):
+                if self.valid_coordinate((x, y)):
+                    if self.liquids[x][y].id != "air":
+                        current_liquid_id = self.liquids[x][y].id
+                        if self.valid_coordinate((x, y - 1)):
+                            liquid_fall = False
+                            if "liquid_transparent" in data.tile_data[self.tiles[x][y - 1].id]["tag"]:
+                                liquid_fall = True
+                            if "liquid_breakable" in data.tile_data[self.tiles[x][y - 1].id]["tag"]:
+                                new_tiles[x][y - 1] = Tile({"id": "air", "state": {}})
+                                liquid_fall = True
+                            if self.liquids[x][y].state["source"] == False:
+                                if self.liquids[x][y - 1].id != "air" and self.liquids[x][y - 1].state["source"] == True:
+                                    liquid_fall = True
+                            if liquid_fall == True:
+                                if self.liquids[x][y].state["source"] == False:
+                                    new_liquids[x][y] = Liquid({"id": "air", "state": {}})
+                                new_liquids[x][y - 1] = Liquid({"id": current_liquid_id, "state": {"source": False}})
+        for x in range(int(self.player.state["coordinate"][0]) - loading_range, int(self.player.state["coordinate"][0]) + loading_range + 1):
+            for y in range(int(self.player.state["coordinate"][1]) - loading_range, int(self.player.state["coordinate"][1]) + loading_range + 1):
+                if self.valid_coordinate((x, y)):
+                    if self.liquids[x][y].id != "air":
+                        current_liquid_id = self.liquids[x][y].id
+                        if self.valid_coordinate((x, y - 1)):
+                            liquid_spread = False
+                            if "liquid_transparent" not in data.tile_data[self.tiles[x][y - 1].id]["tag"]:
+                                liquid_spread = True
+                            if self.liquids[x][y].state["source"] == True:
+                                if self.liquids[x][y - 1].id != "air" and self.liquids[x][y - 1].state["source"] == True:
+                                    liquid_spread = True
+                            if liquid_spread == True:
+                                if self.liquids[x][y].state["source"] == False:
+                                    new_liquids[x][y] = Liquid({"id": "air", "state": {}})
+                                if self.valid_coordinate((x - 1, y)):
+                                    if "liquid_transparent" in data.tile_data[self.tiles[x - 1][y].id]["tag"]:
+                                        new_liquids[x - 1][y] = Liquid({"id": current_liquid_id, "state": {"source": False}})
+                                    if "liquid_breakable" in data.tile_data[self.tiles[x - 1][y].id]["tag"]:
+                                        new_tiles[x - 1][y] = Tile({"id": "air", "state": {}})
+                                        new_liquids[x - 1][y] = Liquid({"id": current_liquid_id, "state": {"source": False}})
+                                if self.valid_coordinate((x + 1, y)):
+                                    if "liquid_transparent" in data.tile_data[self.tiles[x + 1][y].id]["tag"]:
+                                        new_liquids[x + 1][y] = Liquid({"id": current_liquid_id, "state": {"source": False}})
+                                    if "liquid_breakable" in data.tile_data[self.tiles[x + 1][y].id]["tag"]:
+                                        new_tiles[x + 1][y] = Tile({"id": "air", "state": {}})
+                                        new_liquids[x + 1][y] = Liquid({"id": current_liquid_id, "state": {"source": False}})
+        self.tiles = copy.deepcopy(new_tiles)
+        self.liquids = copy.deepcopy(new_liquids)
         # remove hurt effect
         self.player.state["hurt"] = False
         for mob_number in range(len(self.mobs)):
@@ -600,12 +673,18 @@ def display_world(_world: World, _coordinate: tuple[float, float]) -> None:
             tile_y = int_y + offset_y
             if not _world.valid_coordinate((tile_x, tile_y)):
                 continue
-            tile = _world.tiles[tile_x][tile_y]
-            tile_image_unscaled = assets.tile_images[tile.id]
-            tile_image = pygame.transform.scale(tile_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
-            tile_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["map_scale"]) + default_settings["pygame_window_length"] / 2,
-                                   (int((offset_y - float_y) * -16 - 8) * settings["map_scale"]) + default_settings["pygame_window_height"] / 2)
-            screen.blit(tile_image, tile_image_position)
+            if "display_transparent" not in data.liquid_data[_world.liquids[tile_x][tile_y].id]["tag"]:
+                liquid_image_unscaled = assets.liquid_images[_world.liquids[tile_x][tile_y].id]
+                liquid_image = pygame.transform.scale(liquid_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
+                liquid_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["map_scale"]) + default_settings["pygame_window_length"] / 2,
+                                         (int((offset_y - float_y) * -16 - 8) * settings["map_scale"]) + default_settings["pygame_window_height"] / 2)
+                screen.blit(liquid_image, liquid_image_position)
+            if "display_transparent" not in data.tile_data[_world.tiles[tile_x][tile_y].id]["tag"]:
+                tile_image_unscaled = assets.tile_images[_world.tiles[tile_x][tile_y].id]
+                tile_image = pygame.transform.scale(tile_image_unscaled, (16 * settings["map_scale"], 16 * settings["map_scale"]))
+                tile_image_position = ((int((offset_x - float_x) * 16 - 8) * settings["map_scale"]) + default_settings["pygame_window_length"] / 2,
+                                       (int((offset_y - float_y) * -16 - 8) * settings["map_scale"]) + default_settings["pygame_window_height"] / 2)
+                screen.blit(tile_image, tile_image_position)
     # display mobs
     for mob_number in range(len(_world.mobs)):
         mob_image_unscaled = assets.mob_images[_world.mobs[mob_number].id]

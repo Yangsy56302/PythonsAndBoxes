@@ -69,6 +69,7 @@ def print_error(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n")
 
 class Data:
     tile_data: dict[str, Any]
+    liquid_data: dict[str, Any]
     item_data: dict[str, Any]
     mob_data: dict[str, Any]
     font_data: dict[str, Any]
@@ -78,6 +79,10 @@ class Data:
         print_info("Loading Tile Data...")
         file = open(".\\data\\tiles.json", mode="r")
         self.tile_data = json.load(file)
+        file.close()
+        print_info("Loading Liquid Data...")
+        file = open(".\\data\\liquids.json", mode="r")
+        self.liquid_data = json.load(file)
         file.close()
         print_info("Loading Item Data...")
         file = open(".\\data\\items.json", mode="r")
@@ -107,17 +112,22 @@ data = Data()
 
 class Assets:
     tile_images: dict[str, Any]
+    liquid_images: dict[str, Any]
     item_images: dict[str, Any]
     mob_images: dict[str, Any]
     font_images: dict[str, Any]
     def load(self) -> None:
         self.tile_images = {}
+        self.liquid_images = {}
         self.item_images = {}
         self.mob_images = {}
         self.font_images = {}
         print_info("Loading Tile Images...")
         for id in data.tile_data:
             self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
+        print_info("Loading Liquid Images...")
+        for id in data.liquid_data:
+            self.liquid_images[id] = pygame.image.load(".\\assets\\images\\liquids\\" + id + ".png").convert_alpha()
         print_info("Loading Item Images...")
         for id in data.item_data:
             self.item_images[id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()

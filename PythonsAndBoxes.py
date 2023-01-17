@@ -17,6 +17,7 @@ settings["world_directory"] = tkinter.StringVar(value=default_settings["world_di
 settings["read_world"] = tkinter.BooleanVar(value=default_settings["read_world"])
 settings["write_world"] = tkinter.BooleanVar(value=default_settings["write_world"])
 settings["debug"] = tkinter.BooleanVar(value=default_settings["debug"])
+settings["world_settings"]["seed"] = tkinter.StringVar(value=str(default_settings["world_settings"]["seed"]))
 
 
 game_running = False
@@ -71,6 +72,8 @@ world_directory_label = tkinter.Label(tkinter_window, text="World File Location"
 world_directory_label.place(x=0, y=64, width=512, height=32)
 world_directory_entry = tkinter.Entry(tkinter_window, textvariable=settings["world_directory"])
 world_directory_entry.place(x=128, y=96, width=256, height=32)
+world_seed_entry = tkinter.Entry(tkinter_window, textvariable=settings["world_settings"]["seed"])
+world_seed_entry.place(x=192, y=150, width=128, height=32)
 debug_mode_check_button = tkinter.Checkbutton(tkinter_window, text="DEBUG MODE", variable=settings["debug"], onvalue=True, offvalue=False)
 debug_mode_check_button.place(x=192, y=288, width=128, height=32)
 start_button = tkinter.Button(tkinter_window, text="Start", command=start_game)
