@@ -13,6 +13,7 @@ def import_settings() -> dict[str, Any]:
     return return_value
 default_settings = import_settings()
 settings = copy.deepcopy(default_settings)
+tkinter_settings = copy.deepcopy(default_settings)
 
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "TRUE"
@@ -67,81 +68,65 @@ def print_error(*_values, _sep: Optional[str] = " ", _end: Optional[str] = "\n")
     return False
 
 
-class Data:
-    tile_data: dict[str, Any]
-    liquid_data: dict[str, Any]
-    item_data: dict[str, Any]
-    mob_data: dict[str, Any]
-    font_data: dict[str, Any]
-    recipe_data: list[dict[str, Any]]
-    structure_data: dict[str, Any]
-    def load(self) -> None:
-        print_info("Loading Tile Data...")
-        file = open(".\\data\\tiles.json", mode="r")
-        self.tile_data = json.load(file)
-        file.close()
-        print_info("Loading Liquid Data...")
-        file = open(".\\data\\liquids.json", mode="r")
-        self.liquid_data = json.load(file)
-        file.close()
-        print_info("Loading Item Data...")
-        file = open(".\\data\\items.json", mode="r")
-        self.item_data = json.load(file)
-        file.close()
-        print_info("Loading Mob Data...")
-        file = open(".\\data\\mobs.json", mode="r")
-        self.mob_data = json.load(file)
-        file.close()
-        print_info("Loading Font Data...")
-        file = open(".\\data\\fonts.json", mode="r")
-        self.font_data = json.load(file)
-        file.close()
-        print_info("Loading Recipe Data...")
-        file = open(".\\data\\recipes.json", mode="r")
-        self.recipe_data = json.load(file)
-        file.close()
-        print_info("Loading Structure Data...")
-        file = open(".\\data\\structures.json", mode="r")
-        self.structure_data = json.load(file)
-        file.close()
-    def __init__(self) -> None:
-        print_info("Loading Data...")
-        self.load()
-data = Data()
+def import_data() -> dict[str, Any]:
+    return_data = {}
+    print_info("Loading Tile Data...")
+    file = open(".\\data\\tiles.json", mode="r")
+    return_data["tile_data"] = json.load(file)
+    file.close()
+    print_info("Loading Liquid Data...")
+    file = open(".\\data\\liquids.json", mode="r")
+    return_data["liquid_data"] = json.load(file)
+    file.close()
+    print_info("Loading Item Data...")
+    file = open(".\\data\\items.json", mode="r")
+    return_data["item_data"] = json.load(file)
+    file.close()
+    print_info("Loading Mob Data...")
+    file = open(".\\data\\mobs.json", mode="r")
+    return_data["mob_data"] = json.load(file)
+    file.close()
+    print_info("Loading Font Data...")
+    file = open(".\\data\\fonts.json", mode="r")
+    return_data["font_data"] = json.load(file)
+    file.close()
+    print_info("Loading Recipe Data...")
+    file = open(".\\data\\recipes.json", mode="r")
+    return_data["recipe_data"] = json.load(file)
+    file.close()
+    print_info("Loading Structure Data...")
+    file = open(".\\data\\structures.json", mode="r")
+    return_data["structure_data"] = json.load(file)
+    file.close()
+    return return_data
+data = import_data()
 
 
-class Assets:
-    tile_images: dict[str, Any]
-    liquid_images: dict[str, Any]
-    item_images: dict[str, Any]
-    mob_images: dict[str, Any]
-    font_images: dict[str, Any]
-    def load(self) -> None:
-        self.tile_images = {}
-        self.liquid_images = {}
-        self.item_images = {}
-        self.mob_images = {}
-        self.font_images = {}
-        print_info("Loading Tile Images...")
-        for id in data.tile_data:
-            self.tile_images[id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
-        print_info("Loading Liquid Images...")
-        for id in data.liquid_data:
-            self.liquid_images[id] = pygame.image.load(".\\assets\\images\\liquids\\" + id + ".png").convert_alpha()
-        print_info("Loading Item Images...")
-        for id in data.item_data:
-            self.item_images[id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()
-        print_info("Loading Mob Images...")
-        for id in data.mob_data:
-            self.mob_images[id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
-        print_info("Loading Font Images...")
-        font_image = pygame.image.load(".\\assets\\images\\fonts\\default.png").convert_alpha()
-        for id in data.font_data:
-            self.font_images[id] = font_image.subsurface(((data.font_data[id]["coordinate"][0] * 16, data.font_data[id]["coordinate"][1] * 16), (16, 16)))
-    def __init__(self) -> None:
-        print_info("Loading Assets...")
-        self.load()
-assets = Assets()
+def import_assets() -> dict[str, Any]:
+    return_assets = {}
+    return_assets["tile_images"] = {}
+    return_assets["liquid_images"] = {}
+    return_assets["item_images"] = {}
+    return_assets["mob_images"] = {}
+    return_assets["font_images"] = {}
+    print_info("Loading Tile Images...")
+    for id in data["tile_data"]:
+        return_assets["tile_images"][id] = pygame.image.load(".\\assets\\images\\tiles\\" + id + ".png").convert_alpha()
+    print_info("Loading Liquid Images...")
+    for id in data["liquid_data"]:
+        return_assets["liquid_images"][id] = pygame.image.load(".\\assets\\images\\liquids\\" + id + ".png").convert_alpha()
+    print_info("Loading Item Images...")
+    for id in data["item_data"]:
+        return_assets["item_images"][id] = pygame.image.load(".\\assets\\images\\items\\" + id + ".png").convert_alpha()
+    print_info("Loading Mob Images...")
+    for id in data["mob_data"]:
+        return_assets["mob_images"][id] = pygame.image.load(".\\assets\\images\\mobs\\" + id + ".png").convert_alpha()
+    print_info("Loading Font Images...")
+    font_image = pygame.image.load(".\\assets\\images\\fonts\\default.png").convert_alpha()
+    for id in data["font_data"]:
+        return_assets["font_images"][id] = font_image.subsurface(((data["font_data"][id]["coordinate"][0] * 16, data["font_data"][id]["coordinate"][1] * 16), (16, 16)))
+    return return_assets
+assets = import_assets()
 
 
 def tint_image(_image: pygame.Surface, _color: Optional[pygame.Color] = pygame.Color(255, 255, 255, 255)) -> pygame.Surface:
